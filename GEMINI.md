@@ -1,4 +1,5 @@
 Project Overview
+DO NOT READ or EDIT buscab_BACKUP.php is just a backup.
 Purpose: Este proyecto es una aplicación web para la gestión de la carga horaria docente, desarrollada sobre un entorno XAMPP, con soporte para bases de datos SQL Server. Está diseñado para registrar, visualizar y gestionar las horas laborales asignadas a docentes.
 Key Technologies:
 PHP 5.5.33 (versión estable usada en producción)

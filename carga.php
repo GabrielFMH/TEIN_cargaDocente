@@ -44,7 +44,6 @@ if ($_POST["variable2"]=="registro")
 
 			$aleatorio = rand();
 			$nuevonombre = $_SESSION['codigo'].$idsem.".xls";
-			//TODO: posible error en individualex
 			move_uploaded_file($_FILES['archivo']['tmp_name'][$i],'trabajoindividualex/'.$nuevonombre);
 
 			$conn=conex();
