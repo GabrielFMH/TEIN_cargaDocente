@@ -23,14 +23,294 @@ class CargaModel
         cierra($result);
     }
 
+    // Método para validar que la suma de porcentajes no exceda 100%
+    public function validarPorcentajeTotal($codigo, $idsem, $nuevoPorcentaje, $idtrabExcluir = null)
+    {
+        $sql = "SELECT ISNULL(SUM(CAST(porcentaje AS FLOAT)), 0) as total FROM trab WHERE codigo = {$codigo} AND idsem = {$idsem}";
+        if ($idtrabExcluir) {
+            $sql .= " AND idtrab != {$idtrabExcluir}";
+        }
+        
+        $result = luis($this->conn, $sql);
+        $row = fetchrow($result, -1);
+        $totalActual = $row[0];
+        cierra($result);
+        
+        return ($totalActual + $nuevoPorcentaje) <= 100;
+    }
+
+    // Método para generar número automático de informe
+    public function generarNumeroInforme($codigo, $idsem)
+    {
+        $sql = "SELECT ISNULL(MAX(numero_informe), 0) + 1 FROM trab WHERE codigo = {$codigo} AND idsem = {$idsem}";
+        $result = luis($this->conn, $sql);
+        $row = fetchrow($result, -1);
+        $numero = $row[0];
+        cierra($result);
+        return $numero;
+    }
+
+    // Método para validar carga horaria según reglas (20h TC, 40h totales, etc.)
+    public function validarCargaHoraria($codigo, $idsem, $horasNuevas)
+    {
+        $sql = "SELECT 
+                    SUM(CASE WHEN tipo_actividad = 'TC' THEN horas ELSE 0 END) as horas_tc,
+                    SUM(horas) as horas_totales
+                FROM trab 
+                WHERE codigo = {$codigo} AND idsem = {$idsem}";
+        
+        $result = luis($this->conn, $sql);
+        $row = fetchrow($result, -1);
+        $horas_tc = $row[0] ? $row[0] : 0;
+        $horas_totales = $row[1] ? $row[1] : 0;
+        cierra($result);
+        
+        $respuesta = array(
+            'valido' => true,
+            'mensaje' => ''
+        );
+        
+        // Validar mínimo 20h lectivas para TC
+        if (($horas_tc + $horasNuevas) < 20) {
+            $respuesta['valido'] = false;
+            $respuesta['mensaje'] = 'Las horas lectivas (TC) deben ser mínimo 20 horas';
+        }
+        
+        // Validar máximo 40h totales
+        if (($horas_totales + $horasNuevas) > 40) {
+            $respuesta['valido'] = false;
+            $respuesta['mensaje'] = 'Las horas totales no pueden exceder 40 horas';
+        }
+        
+        return $respuesta;
+    }
+
+    // Método para calcular porcentaje de avance automáticamente
+    public function calcularPorcentajeAutomatico($codigo, $idsem, $numActividades)
+    {
+        if ($numActividades == 0) return 0;
+        
+        // Distribución equitativa para nuevas actividades
+        return round(100 / $numActividades, 2);
+    }
+
+    // Método para obtener catálogo de actividades
+    public function getCatalogoActividades()
+    {
+        $sql = "SELECT id, nombre, descripcion, tipo FROM catalogo_actividades WHERE activo = 1 ORDER BY nombre";
+        return luis($this->conn, $sql);
+    }
+
+    // Método para obtener catálogo de comité electoral (nuevas actividades)
+    public function getCatalogoComiteElectoral()
+    {
+        $actividades = array(
+            'Preparacion, desarrollo y evaluacion de clases teoricas y practicas',
+            'Orientacion de matricula',
+            'Participacion en jurados',
+            'Asesoramiento de practicas pre-profesionales',
+            'Asesoramiento de tesis',
+            'Comisiones',
+            'Seguimiento de egresados',
+            'Consejeria',
+            'Tutoria',
+            'Seminarios',
+            'Investigacion',
+            'Produccion Intelectual',
+            'Proyeccion Social',
+            'Extension Universitaria',
+            'Gestion de gobierno universitario',
+            'Jefatura de oficina o unidades administrativas',
+            'Comisiones',
+            'Produccion de bienes o prestacion de servicios'
+        );
+        
+        return $actividades;
+    }
+
+    // Método para integración con Scalafon
+    public function integrarDatosScalafon($codigo)
+    {
+        // Simulación de integración con Scalafon
+        // En producción, aquí iría la lógica de conexión con el servicio
+        $sql = "SELECT 
+                    s.horas_lectivas,
+                    s.horas_totales,
+                    s.tipo_contrato,
+                    s.dependencia,
+                    s.costo_hora
+                FROM scalafon_datos s 
+                WHERE s.codigo_universitario = {$codigo}";
+        
+        return luis($this->conn, $sql);
+    }
+
+    // Método para obtener costo por hora por docente
+    public function getCostoPorHoraDocente($codigo)
+    {
+        $sql = "SELECT 
+                    ISNULL(costo_hora, 0) as costo_hora,
+                    ISNULL(beneficios_sociales, 0) as beneficios_sociales
+                FROM docente_costos 
+                WHERE codigo = {$codigo}";
+        
+        $result = luis($this->conn, $sql);
+        $row = fetchrow($result, -1);
+        cierra($result);
+        
+        return array(
+            'costo_hora' => $row[0],
+            'beneficios_sociales' => $row[1]
+        );
+    }
+
+    // Método para enlazar PTI con planilla presupuestal
+    public function enlazarPTIPlanilla($idtrab, $id_planilla)
+    {
+        $sql = "UPDATE trab SET id_planilla_presupuestal = {$id_planilla} WHERE idtrab = {$idtrab}";
+        $this->execute_query($sql);
+    }
+
+    // Método para consultas de presupuesto
+    public function getPresupuestoInvestigacion($codigo, $idsem)
+    {
+        $sql = "SELECT 
+                    p.planilla,
+                    p.pta,
+                    p.beneficios,
+                    SUM(t.horas * dc.costo_hora) as costo_total
+                FROM trab t
+                INNER JOIN docente_costos dc ON dc.codigo = t.codigo
+                INNER JOIN planilla_presupuestal p ON p.id = t.id_planilla_presupuestal
+                WHERE t.codigo = {$codigo} AND t.idsem = {$idsem} AND t.tipo = 'INVESTIGACION'
+                GROUP BY p.planilla, p.pta, p.beneficios";
+        
+        return luis($this->conn, $sql);
+    }
+
+    // Método para consultas de cobranzas
+    public function getCobranzas($codigo)
+    {
+        $sql = "SELECT 
+                    c.matriculas,
+                    c.cuotas,
+                    c.pronto_pago,
+                    c.fecha_actualizacion
+                FROM cobranzas_docente c
+                WHERE c.codigo = {$codigo}";
+        
+        return luis($this->conn, $sql);
+    }
+
+    // Método para obtener estudiantes activos
+    public function getEstudiantesActivos($codigo, $tipo_programa)
+    {
+        $sql = "SELECT 
+                    COUNT(*) as total_estudiantes,
+                    programa
+                FROM estudiantes_activos
+                WHERE codigo_docente = {$codigo} 
+                AND tipo_programa = '{$tipo_programa}'
+                GROUP BY programa";
+        
+        return luis($this->conn, $sql);
+    }
+
+    // Método para reportes de horas lectivas
+    public function getReporteHorasLectivas($idsem, $tipo_docente = null, $escuela = null, $facultad = null)
+    {
+        $sql = "SELECT 
+                    t.codigo,
+                    d.nombre_docente,
+                    SUM(CASE WHEN t.tipo_actividad = 'TC' THEN t.horas ELSE 0 END) as horas_tc,
+                    SUM(CASE WHEN t.tipo_actividad = 'TP' THEN t.horas ELSE 0 END) as horas_tp,
+                    SUM(t.horas) as horas_totales,
+                    e.nombre_escuela,
+                    f.nombre_facultad
+                FROM trab t
+                INNER JOIN docentes d ON d.codigo = t.codigo
+                INNER JOIN escuelas e ON e.id = t.id_escuela
+                INNER JOIN facultades f ON f.id = e.id_facultad
+                WHERE t.idsem = {$idsem}";
+        
+        if ($tipo_docente) {
+            $sql .= " AND t.tipo_docente = '{$tipo_docente}'";
+        }
+        
+        if ($escuela) {
+            $sql .= " AND e.id = {$escuela}";
+        }
+        
+        if ($facultad) {
+            $sql .= " AND f.id = {$facultad}";
+        }
+        
+        $sql .= " GROUP BY t.codigo, d.nombre_docente, e.nombre_escuela, f.nombre_facultad
+                  ORDER BY f.nombre_facultad, e.nombre_escuela, d.nombre_docente";
+        
+        return luis($this->conn, $sql);
+    }
+
+    // Método para reportes de horas programadas por clasificación
+    public function getReporteHorasPorClasificacion($idsem, $escuela = null, $facultad = null)
+    {
+        $sql = "SELECT 
+                    c.nombre_clasificacion,
+                    SUM(t.horas) as horas_totales,
+                    COUNT(t.idtrab) as cantidad_actividades,
+                    e.nombre_escuela,
+                    f.nombre_facultad
+                FROM trab t
+                INNER JOIN clasificaciones c ON c.id = t.id_clasificacion
+                INNER JOIN escuelas e ON e.id = t.id_escuela
+                INNER JOIN facultades f ON f.id = e.id_facultad
+                WHERE t.idsem = {$idsem}";
+        
+        if ($escuela) {
+            $sql .= " AND e.id = {$escuela}";
+        }
+        
+        if ($facultad) {
+            $sql .= " AND f.id = {$facultad}";
+        }
+        
+        $sql .= " GROUP BY c.nombre_clasificacion, e.nombre_escuela, f.nombre_facultad
+                  ORDER BY horas_totales DESC";
+        
+        return luis($this->conn, $sql);
+    }
+
     public function uploadTrabajoIndividual($idsem, $codigo, $filename)
     {
+        // Validar tipo de archivo antes de guardar
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if (!in_array($extension, array('xls', 'xlsx'))) {
+            throw new Exception('Solo se permiten archivos Excel (.xls, .xlsx)');
+        }
+        
         $sql = "exec trabiagregardoc_v2 {$idsem}, {$codigo}, '{$filename}'";
         $this->execute_query($sql);
     }
 
     public function agregarTrabajo($codigox, $vacti, $vdacti, $vimporta, $vmedida, $vcant, $vhoras, $vcalif, $vmeta, $vdatebox, $vdatebox2, $viddepe, $vcanthoras, $idsem)
     {
+        // Validar que vcant solo contenga números
+        if (!is_numeric($vcant)) {
+            throw new Exception('El campo cantidad debe ser numérico');
+        }
+        
+        // Validar porcentaje total
+        $porcentajeValido = $this->validarPorcentajeTotal($codigox, $idsem, $vcalif);
+        if (!$porcentajeValido) {
+            throw new Exception('La suma de porcentajes no puede exceder 100%');
+        }
+        
+        // Validar carga horaria
+        $validacionCarga = $this->validarCargaHoraria($codigox, $idsem, $vhoras);
+        if (!$validacionCarga['valido']) {
+            throw new Exception($validacionCarga['mensaje']);
+        }
+        
         $sql = "exec trabiagregar_v2 {$codigox}, '{$vacti}', '{$vdacti}', '{$vimporta}', '{$vmedida}', {$vcant}, {$vhoras}, {$vcalif}, '{$vmeta}', '{$vdatebox}', '{$vdatebox2}', '{$viddepe}', '{$vcanthoras}', {$idsem}";
         $this->execute_query($sql);
     }
@@ -49,6 +329,11 @@ class CargaModel
 
     public function registrarHistorial($codigox, $idtrab, $vnominfo_historial, $vdirigido_historial, $vcargo_historial, $vremitente_historial, $vdetalle_historial, $vporcentaje_historial, $dia)
     {
+        // Validar que el porcentaje sea numérico
+        if (!is_numeric($vporcentaje_historial)) {
+            throw new Exception('El porcentaje debe ser numérico');
+        }
+        
         $sql = "exec sp_add_trab_historial {$codigox}, '{$idtrab}', '{$vnominfo_historial}', '{$vdirigido_historial}', '{$vcargo_historial}', '{$vremitente_historial}', '{$vdetalle_historial}', '{$vporcentaje_historial}', '{$dia}'";
         $this->execute_query($sql);
     }
@@ -67,6 +352,17 @@ class CargaModel
 
     public function editarTrabajo($codigox, $idtrab, $vacti_editar, $vdacti_editar, $vimporta_editar, $vmedida_editar, $vcant_editar, $vhoras_editar, $vcalif_editar, $vmeta_editar, $vdatebox_editar, $vdatebox2_editar, $vporcentaje_editar)
     {
+        // Validar que vcant y vhoras sean numéricos
+        if (!is_numeric($vcant_editar) || !is_numeric($vhoras_editar) || !is_numeric($vcalif_editar)) {
+            throw new Exception('Los campos cantidad, horas y porcentaje deben ser numéricos');
+        }
+        
+        // Validar porcentaje total excluyendo esta actividad
+        $porcentajeValido = $this->validarPorcentajeTotal($codigox, $idtrab, $vcalif_editar, $idtrab);
+        if (!$porcentajeValido) {
+            throw new Exception('La suma de porcentajes no puede exceder 100%');
+        }
+        
         $sql = "exec sp_editar_trabindiv {$codigox}, '{$idtrab}', '{$vacti_editar}', '{$vdacti_editar}', '{$vimporta_editar}', '{$vmedida_editar}', {$vcant_editar}, {$vhoras_editar}, {$vcalif_editar}, '{$vmeta_editar}', '{$vdatebox_editar}', '{$vdatebox2_editar}', '{$vporcentaje_editar}'";
         $this->execute_query($sql);
     }
@@ -226,6 +522,28 @@ class CargaModel
 			) AS tb 
 			ORDER BY tb.Id DESC";
         return luis($this->conn, $sql_accesos);
+    }
+    
+    // Método para filtrar actividades por meses (ciclos I, II, REC)
+    public function filtrarActividadesPorMes($idsem, $mesInicio, $mesFin)
+    {
+        $sql = "SELECT * FROM trab 
+                WHERE idsem = {$idsem} 
+                AND MONTH(fecha_inicio) BETWEEN {$mesInicio} AND {$mesFin}
+                ORDER BY fecha_inicio";
+        return luis($this->conn, $sql);
+    }
+    
+    // Método para verificar si una actividad es lectiva o no
+    public function esActividadLectiva($idtrab)
+    {
+        $sql = "SELECT tipo_actividad FROM trab WHERE idtrab = {$idtrab}";
+        $result = luis($this->conn, $sql);
+        $row = fetchrow($result, -1);
+        $tipo = $row[0];
+        cierra($result);
+        
+        return ($tipo == 'LECTIVA' || $tipo == 'TC' || $tipo == 'TP');
     }
 }
 ?>

@@ -1,6 +1,7 @@
 Project Overview
 DO NOT READ or EDIT buscab_BACKUP.php and carga_BACKUP.php they are just backups.
 Purpose: Este proyecto es una aplicación web para la gestión de la carga horaria docente, desarrollada sobre un entorno XAMPP, con soporte para bases de datos SQL Server. Está diseñado para registrar, visualizar y gestionar las horas laborales asignadas a docentes.
+ARQUITECTURA MVC
 Key Technologies:
 PHP 5.5.33 (versión estable usada en producción)
 Apache (XAMPP)
@@ -8,10 +9,7 @@ SQL Server (via sqlsrv extension, conectado mediante conexion.php)
 HTML, CSS, JavaScript (para interfaces dinámicas)
 Extensión php_sqlsrv_55_nts.dll habilitada en el entorno
 Main Entry Points:
-index.php: Página principal del sistema.
-carga_horaria.php: Módulo principal para carga y edición de horarios docentes.
-reportes.php: Generación de reportes de carga horaria por docente o curso.
-login.php: Autenticación de usuarios (docentes/administradores).
+
 Database Connection:
 El archivo conexion.php maneja la conexión a SQL Server usando el driver sqlsrv. Asegúrate de que la extensión php_sqlsrv_55_nts.dll esté activa en php.ini.
 Gemini CLI Interaction Guidelines

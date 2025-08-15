@@ -310,7 +310,8 @@ if($data['cursos']){
 		echo ' <td '.$tcol.'><font size="1">'.$row[6].'</font></td>';
 		echo '<input name="codcur" type="hidden" value="'.$row[0].'">';
 		echo'<input name="codp" type="hidden" value="'.$data['codper'].'">';
-		echo'<td '.$tcol.'><font size="1"><a href=# onclick="javascript:window.open(\'carga.php?sesion='.$data['sex'].'&o='.$row[5].'&taex='.$row[9].'\',\'otra\',\'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=nos,width=850,height=650,top=40,left=50\');return false"><center><img src="Imagenes/view.gif" width=18 height=20 alt="Edit file" border=0></center> </a></font></td>';
+		// CORRECCIÓN: Usar buscacxv2.php en lugar de carga.php
+		echo'<td '.$tcol.'><font size="1"><a href=# onclick="javascript:window.open(\'buscacxv2.php?sesion='.$data['sex'].'&o='.$row[5].'&taex='.$row[9].'\',\'otra\',\'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=no,width=850,height=650,top=40,left=50\');return false"><center><img src="imagenes/view.gif" width=18 height=20 alt="Consolidado" border=0></center> </a></font></td>';
 		echo'</tr>';
 		if ($row[4]=='Ingeniería Civil'){$mj=1;}
 
@@ -324,7 +325,7 @@ echo '</form>';
 if(isset($data['ultimos_accesos'])){
     if ( numrow($data['ultimos_accesos']) > 0 ){
 ?>
-    <br><br>
+
     <h3>Últimos Accesos</h3>
     <table border="0" cellspacing="2">
         <tr>
@@ -384,124 +385,7 @@ if(isset($data['tr'])==true)
 	<tr>
 	<td></td>
 	</tr>
-	<td>Seleccionar el archivo <font size=1px>(xls)</font> <input type="file" name="archivo[]" multiple></td>
-	<td><input type="submit" value="Subir Archivo" name="registrar" id="registrar"></td>
-	</tr>
-	</table>
-	</form>';
-
-    if($data['trabajo_individual_doc']){
-        $rowdir = fetchrow($data['trabajo_individual_doc'],-1);
-        $doc=$rowdir[0];
-        echo "- Visualizar Horario de Trabajo ".$semestre.": <a href=trabajoindividualex/".$doc.">Hacer Clic para Ver el Documento</a><br><br><br>";
-    }
-}
-
-echo '<br><br>En la columna <strong>Consolidado</strong> podrá visualizar la nota promedio de la unidad y el resumen de la unidad <br>que incluye: aprobados, desaprobados, retirados y abandonos.';
-
-echo '<INPUT TYPE="hidden" NAME="op" value="0" >';
-echo '<table border="0" width="100%">';
-echo '<tr>';
-
-if($data['semestre_info']){
-    $rowdir = fetchrow($data['semestre_info'], -1);
-    $semestre=$rowdir[0];
-    $obssemestre=$rowdir[1];
-}
-
-echo '<td width="550">';
-if($data['idsem'] > 0){
-	echo '<font size="2"><strong>Semestre:</strong> ('. $data['idsem'] .') - '. $obssemestre .'</font><br>';
-}
-echo '<font size="2"><strong>Docente:</strong> '.$data['name'].'</font>';
-echo '</td>';
-
-if ($data['idsem'] == '')
-{
-	echo "<font size='4' style='color: 102368;'>Hacer clic en el SEMESTRE del menu izquierdo.</font>";
-	exit;
-}
-
-if(!$data['esSemestreTaex']){
-	echo '<td><font size="1"><a style="font-size:12px;" href="carga.php?tr=1&sesion='.$data['sex'].'&x='.$data['idsem'].'" >TRABAJO INDIVIDUAL '.$obssemestre.' </a></font>  <font size="1" face="Arial">
-									<blink>
-										<a href="documentos/PIT_Docente/ActividadesPITGA_V2.pdf" target="_blank">
-											<center style="color: red;">( Guía PIT )</center>
-										</a>
-									</blink>
-							</font></td>';
-}
-
-if($data['director_depe']){
-    $rowdir = fetchrow($data['director_depe'], -1);
-    $iddepedirec=$rowdir[0];
-    require_once('encripta_pdf.php');
-    if (($iddepedirec>0) or ($data['codigo']==117584) or ($data['codigo']==	202848))
-    {
-        //echo '<td><font size="2"><a target="_blank" href="http://www.upt.edu.pe/epic2/resultado.php" >Reporte de resultados de encuesta</a></font></td>';
-    }
-
-    if (($data['codigo']==117584) or ($data['codigo']==	202848)or ($data['codigo']==141414)or ($data['codigo']==109684)or ($data['codigo']==124717))
-    {
-        echo '<td><font size="2"><a target="_blank" href="http://www.upt.edu.pe/epic2/resultadovi.php" >Reporte de resultados de encuesta VICERRECTOR y RECTOR(A)</a></font></td>';
-    }
-}
-
-echo '</tr>';
-echo '</table>';
-
-$na=0;
-$mj=0;
-
-echo '<table border="0" ><tr><th bgcolor="#DBEAF5" ><font size="1">sel</font></th><th bgcolor="#DBEAF5" ><font size="1">CodCurso</font></th><th bgcolor="#DBEAF5" ><font size="1">Seccion</font></th><th bgcolor="#DBEAF5" ><font size="1">Curso</font></th><th bgcolor="#DBEAF5" ><font size="1">Semestre</font></th><th bgcolor="#DBEAF5" ><font size="1">Escuela</font></th><th bgcolor="#DBEAF5" ><font size="1">Hrs.</font></th>';
-echo'<th bgcolor="#DBEAF5" ><font size="1">Consolidado</font></th>';
-echo'</tr>';
-
-if($data['cursos']){
-    while ($row =fetchrow($data['cursos'],-1))
-	{
-		$na++;
-        if ($ton==1){$tcol='bgcolor="#F3F9FC"';$ton=0;}else{$tcol='';$ton=1;}
-		echo ' <tr '.$tcol.'><td><input type="radio" value="'.$na.'" name="R1" onClick="javascript:pele('.$na.')" >&nbsp;&nbsp;</td>';
-		echo ' <td '.$tcol.'><font size="1">'.$row[0].'</font></td>';
-		echo ' <td '.$tcol.'><font size="1">'.$row[1].'</font></td>';
-		echo ' <td '.$tcol.'><font size="1">'.$row[2].'</font></td>';
-		echo ' <td '.$tcol.'><font size="1">'.$row[3].'</font></td>';
-		echo ' <td '.$tcol.'><font size="1">'.$row[4].'</font></td>';
-		echo ' <td '.$tcol.'><font size="1">'.$row[6].'</font></td>';
-		echo '<input name="codcur" type="hidden" value="'.$row[0].'">';
-		echo'<input name="codp" type="hidden" value="'.$data['codper'].'">';
-		echo'<td '.$tcol.'><font size="1"><a href=# onclick="javascript:window.open(\'buscacxv2.php?sesion='.$data['sex'].'&o='.$row[5].'&taex='.$row[9].'\',\'otra\',\'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=nos,width=850,height=650,top=40,left=50\');return false"><center><img src="imagenes/view.gif" width=18 height=20 alt="Edit file" border=0></center> </a></font></td>';
-		echo'</tr>';
-		if ($row[4]=='Ingeniería Civil'){$mj=1;}
-
-	}
-}
-
-echo '<table border="0" cellpadding="10" ><tr><td width="132" ></td></tr></table>';
-echo '</table>';
-echo '</form>';
-
-$file_php=0;
-if (isset($data['tr'])==true ){
-	require ("genera.php");
-	$sem = $data['idsem'];
-	individual($data['codigo'], $data['sex'], $data['codper'], 0, $file_php,$sem);
-}
-
-if(isset($data['tr'])==true)
-{
-	echo  '<br><br><form method="post" action="carga.php?tr=1&sesion='.$data['sex'].'&x='.$data['idsem'].'" name="registro" id="registro" enctype="multipart/form-data">
-	<table border="0" widtd="100%" >
-	<tr><td style="color:111351; font-size:15px;"><b>REGISTRO DE HORARIO DE TRABAJO</b></td></tr>
-	<tr>
-	<td><input type="hidden" name="variable2" value="registro" />- Descargar <b>Anexo</b> de horario de trabajo<a href="trabajoindividualex/Horario_Docente.xls" target="_blank"><span style="color: red;"><font size="1" face="Arial"><blink> ( Haga clic aquí )</span> </font></td></tr>
-	</tr>
-	<tr>
-	<tr>
-	<td></td>
-	</tr>
-	<td>Seleccionar el archivo <font size=1px>(xls)</font> <input type="file" name="archivo[]" multiple></td>
+	<td>Seleccionar el archivo <font size="1px">(xls)</font> <input type="file" name="archivo[]" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple onchange="validarArchivo(this)"></td>
 	<td><input type="submit" value="Subir Archivo" name="registrar" id="registrar"></td>
 	</tr>
 	</table>
