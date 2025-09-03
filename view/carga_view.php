@@ -298,9 +298,10 @@ if($data['director_depe']){
 echo '</tr>';
 echo '</table>';
 
-// Botón para imprimir usando FPDF
+// Botones para imprimir y exportar
 echo '<div style="text-align: right; margin: 10px 0;">';
-echo '<button type="button" id="btnGenerarPDF" style="padding: 8px 15px; background-color: #1E88E5; color: white; border: none; border-radius: 4px; cursor: pointer;">Descargar Carga (PDF)</button>';
+echo '<button type="button" id="btnGenerarPDF" style="padding: 8px 15px; background-color: #1E88E5; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Descargar Carga (PDF)</button>';
+echo '<button type="button" id="btnGenerarExcel" style="padding: 8px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Descargar Carga (Excel)</button>';
 echo '</div>';
 
 $na=0;
@@ -536,6 +537,17 @@ document.addEventListener('DOMContentLoaded', function () {
         /* Llamamos a la herramienta de impresión nativa del navegador */
         window.print();
     });
+
+    /* === Descargar Excel === */
+    var btnExcel = document.getElementById('btnGenerarExcel');
+    if (btnExcel) {
+        btnExcel.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            // Redirigir a la URL de exportación Excel
+            var url = 'carga.php?sesion=<?php echo $data['sex']; ?>&x=<?php echo $data['idsem']; ?>&exportar=1&formato=excel';
+            window.location.href = url;
+        });
+    }
 });
 </script>
 </html>

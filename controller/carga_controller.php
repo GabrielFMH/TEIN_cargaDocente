@@ -40,13 +40,12 @@ class CargaController
     private function handleExport()
     {
         // Limpiar cualquier salida previa inmediatamente
-        if (ob_get_level()) {
+        while (ob_get_level()) {
             ob_end_clean();
         }
-        
-        // Iniciar un nuevo buffer de salida
+
+        // Iniciar un nuevo buffer de salida limpio
         ob_start();
-        ob_end_clean();
         
         $sex = isset($_GET['sesion']) ? $_GET['sesion'] : '';
         
@@ -69,7 +68,22 @@ class CargaController
                 }
                 
                 if ($formato == 'excel') {
-                    $this->exportarAExcel($cursos, $idsem);
+                    try {
+                        // Usar el método del modelo para exportar cargas lectivas/no lectivas
+                        $this->model->generarReporteExcel($idsem, $_SESSION['codigo']);
+                    } catch (Exception $e) {
+                        // En caso de error, limpiar buffer y mostrar mensaje
+                        if (ob_get_level()) {
+                            ob_end_clean();
+                        }
+                        header('Content-Type: text/html; charset=UTF-8');
+                        echo '<html><body>';
+                        echo '<h1>Error al generar el reporte Excel</h1>';
+                        echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
+                        echo '<p><a href="javascript:history.back()">Volver</a></p>';
+                        echo '</body></html>';
+                        exit;
+                    }
                 } else {
                     $this->exportarAPDF($cursos, $idsem);
                 }
@@ -229,7 +243,22 @@ class CargaController
         $cursos = $this->model->getCursos($_SESSION['codper'], $idsem, 0);
         
         if ($formato == 'excel') {
-            $this->exportarAExcel($cursos, $idsem);
+            try {
+                // Usar el método del modelo para exportar cargas lectivas/no lectivas
+                $this->model->generarReporteExcel($idsem, $_SESSION['codigo']);
+            } catch (Exception $e) {
+                // En caso de error, limpiar buffer y mostrar mensaje
+                if (ob_get_level()) {
+                    ob_end_clean();
+                }
+                header('Content-Type: text/html; charset=UTF-8');
+                echo '<html><body>';
+                echo '<h1>Error al generar el reporte Excel</h1>';
+                echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
+                echo '<p><a href="javascript:history.back()">Volver</a></p>';
+                echo '</body></html>';
+                exit;
+            }
         } else {
             $this->exportarAPDF($cursos, $idsem);
         }
@@ -435,22 +464,43 @@ class CargaController
             }
             */
 
-            if (isset($_POST["addhistorial"]) && $_POST["addhistorial"] == "Registrar") {
+            if ($_POST["addhistorial"]=="Registrar")
+            {
                 // Validar autorización
                 if (!$this->verificarAutorizacion(200)) {
                     echo "<script language='javascript'>alert('No tiene permisos para realizar esta acción'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
                     return;
                 }
-                
-                $_SESSION['codigox'] = $_POST["coduni"];
-                
-                // Validar campo numérico para porcentaje
-                if (!$this->validarCampoNumerico($_POST['vporcentaje_historial'])) {
-                    echo "<script language='javascript'>alert('El porcentaje debe ser numérico'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
-                    return;
-                }
-                
-                $this->model->registrarHistorial($_SESSION['codigox'], $_POST['vdactividad_historial'], $_POST['vnominfo_historial'], $_POST['vdirigido_historial'], $_POST['vcargo_historial'], $_POST['vremitente_historial'], $_POST['vdetalle_historial'], $_POST['vporcentaje_historial'], date("d/m/Y"));
+
+                $vdactividad_historial=$_POST["vdactividad_historial"];
+                $vnominfo_historial=$_POST["vnominfo_historial"];
+                $vdirigido_historial=$_POST["vdirigido_historial"];
+                $vcargo_historial=$_POST["vcargo_historial"];
+                $vremitente_historial=$_POST["vremitente_historial"];
+                $vdetalle_historial=$_POST["vdetalle_historial"];
+                $vporcentaje_historial=$_POST["vporcentaje_historial"];
+
+                if (isset($vnominfo_historial)==false){$vnominfo_historial="";}
+                if (isset($vdirigido_historial)==false){$vdirigido_historial="";}
+                if (isset($vdirigido_historial)==false){$vdirigido_historial="";}
+                if (isset($vcargo_historial)==false){$vcargo_historial="";}
+                if (isset($vremitente_historial)==false){$vremitente_historial="";}
+                if (isset($vdetalle_historial)==false){$vdetalle_historial="";}
+
+                $_SESSION['codigox']=$_POST["coduni"];
+
+                $idtrab=$vdactividad_historial;
+
+                date_default_timezone_set('America/Lima');
+                $dia=date("d/m/Y");
+
+                $conn=conex();
+
+                $sql="exec sp_add_trab_historial ".$_SESSION['codigox'].", '".$idtrab."', '".$vnominfo_historial."', '".$vdirigido_historial."', '".$vcargo_historial."', '".$vremitente_historial."', '".$vdetalle_historial."', '".$vporcentaje_historial."', '".$dia."'";
+                $result=luis($conn, $sql);
+
+                cierra($result);
+                noconex($conn);
             }
 
             if (isset($_POST["vn"]) && $_POST["vn"] > 0) {

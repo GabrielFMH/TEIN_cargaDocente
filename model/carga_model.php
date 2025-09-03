@@ -71,7 +71,7 @@ class CargaModel
         );
         
         // Validar mínimo 20h lectivas para TC
-        if (($horas_tc + $horasNuevas) < 20) {
+        if (($horas_tc + $horasNuevas) > 20) {
             $respuesta['valido'] = false;
             $respuesta['mensaje'] = 'Las horas lectivas (TC) deben ser mínimo 20 horas';
         }
@@ -323,7 +323,7 @@ class CargaModel
 
     public function modificarEstadoTrabajoIndividual($codigox, $idtrab, $vestado_editar)
     {
-        $sql = "exec sp_editar_trabindiv_estado {$codigox}, '{$idtrab}', '{$vestado_editar}'";
+        $sql = "exec sp_editar_trabindiv_estado {$codigox}, {$idtrab}, '{$vestado_editar}'";
         $this->execute_query($sql);
     }
 
@@ -334,7 +334,7 @@ class CargaModel
             throw new Exception('El porcentaje debe ser numérico');
         }
         
-        $sql = "exec sp_add_trab_historial {$codigox}, '{$idtrab}', '{$vnominfo_historial}', '{$vdirigido_historial}', '{$vcargo_historial}', '{$vremitente_historial}', '{$vdetalle_historial}', '{$vporcentaje_historial}', '{$dia}'";
+        $sql = "exec sp_add_trab_historial {$codigox}, {$idtrab}, '{$vnominfo_historial}', '{$vdirigido_historial}', '{$vcargo_historial}', '{$vremitente_historial}', '{$vdetalle_historial}', {$vporcentaje_historial}, '{$dia}'";
         $this->execute_query($sql);
     }
 
@@ -357,13 +357,20 @@ class CargaModel
             throw new Exception('Los campos cantidad, horas y porcentaje deben ser numéricos');
         }
         
+        // Obtener idsem del trabajo
+        $sql_idsem = "SELECT idsem FROM trab WHERE idtrab = {$idtrab}";
+        $result_idsem = luis($this->conn, $sql_idsem);
+        $row_idsem = fetchrow($result_idsem, -1);
+        $idsem = $row_idsem[0];
+        cierra($result_idsem);
+
         // Validar porcentaje total excluyendo esta actividad
-        $porcentajeValido = $this->validarPorcentajeTotal($codigox, $idtrab, $vcalif_editar, $idtrab);
+        $porcentajeValido = $this->validarPorcentajeTotal($codigox, $idsem, $vcalif_editar, $idtrab);
         if (!$porcentajeValido) {
             throw new Exception('La suma de porcentajes no puede exceder 100%');
         }
         
-        $sql = "exec sp_editar_trabindiv {$codigox}, '{$idtrab}', '{$vacti_editar}', '{$vdacti_editar}', '{$vimporta_editar}', '{$vmedida_editar}', {$vcant_editar}, {$vhoras_editar}, {$vcalif_editar}, '{$vmeta_editar}', '{$vdatebox_editar}', '{$vdatebox2_editar}', '{$vporcentaje_editar}'";
+        $sql = "exec sp_editar_trabindiv {$codigox}, {$idtrab}, '{$vacti_editar}', '{$vdacti_editar}', '{$vimporta_editar}', '{$vmedida_editar}', {$vcant_editar}, {$vhoras_editar}, {$vcalif_editar}, '{$vmeta_editar}', '{$vdatebox_editar}', '{$vdatebox2_editar}', {$vporcentaje_editar}";
         $this->execute_query($sql);
     }
     
@@ -537,13 +544,173 @@ class CargaModel
     // Método para verificar si una actividad es lectiva o no
     public function esActividadLectiva($idtrab)
     {
-        $sql = "SELECT tipo_actividad FROM trab WHERE idtrab = {$idtrab}";
+        $sql = "SELECT actividad FROM trab WHERE idtrab = {$idtrab}";
         $result = luis($this->conn, $sql);
         $row = fetchrow($result, -1);
-        $tipo = $row[0];
+        $actividad = strtolower($row[0]);
         cierra($result);
-        
-        return ($tipo == 'LECTIVA' || $tipo == 'TC' || $tipo == 'TP');
+
+        return (strpos($actividad, 'teoria') !== false || strpos($actividad, 'practica') !== false);
+    }
+    public function getCargasLectivasNoLectivas($idsem, $codigo = null)
+    {
+        try {
+            // Verificar conexión
+            if (!$this->conn) {
+                throw new Exception('Conexión a la base de datos no disponible.');
+            }
+
+            // Verificar parámetros
+            if (!is_numeric($idsem)) {
+                throw new Exception('El parámetro idsem debe ser numérico. Valor recibido: ' . $idsem);
+            }
+            if ($codigo !== null && !is_numeric($codigo)) {
+                throw new Exception('El parámetro codigo debe ser numérico. Valor recibido: ' . $codigo);
+            }
+
+            // Consulta simplificada para depuración
+            $sql = "SELECT COUNT(*) as total FROM trab WHERE idsem = {$idsem}";
+            if ($codigo) {
+                $sql .= " AND codigo = {$codigo}";
+            }
+
+            $result = luis($this->conn, $sql);
+            if (!$result) {
+                // Intentar obtener error de SQL Server
+                $error = 'Error desconocido en consulta simplificada';
+                if (function_exists('mssql_get_last_message')) {
+                    $error = mssql_get_last_message();
+                }
+                throw new Exception('Error al ejecutar consulta simplificada. SQL: ' . $sql . '. Error: ' . $error);
+            }
+
+            $row = fetchrow($result, -1);
+            cierra($result);
+
+            if ($row[0] == 0) {
+                throw new Exception('No se encontraron registros para el semestre ' . $idsem . ' y código ' . ($codigo ?: 'todos'));
+            }
+
+            // Consulta completa si hay datos (sin tipo_actividad ya que no existe en la tabla)
+            $sql = "SELECT
+                        t.idtrab,
+                        t.codigo,
+                        t.actividad,
+                        t.horas,
+                        t.fecha_inicio,
+                        t.fecha_fin,
+                        CASE WHEN t.actividad LIKE '%teoria%' OR t.actividad LIKE '%practica%' THEN 'Lectiva' ELSE 'No Lectiva' END as clasificacion
+                    FROM trab t
+                    WHERE t.idsem = {$idsem}";
+            if ($codigo) {
+                $sql .= " AND t.codigo = {$codigo}";
+            }
+            $sql .= " ORDER BY t.fecha_inicio";
+
+            // Intentar ejecutar la consulta
+            $result = luis($this->conn, $sql);
+            if (!$result) {
+                // Intentar obtener más información del error
+                $errorInfo = 'No se pudo obtener información adicional del error.';
+                // Si hay una función para errores, usarla aquí
+                throw new Exception('Error al ejecutar la consulta SQL. SQL: ' . $sql . '. Info adicional: ' . $errorInfo);
+            }
+
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception('Error en getCargasLectivasNoLectivas: ' . $e->getMessage());
+        }
+    }
+    public function generarReporteExcel($idsem, $codigo = null)
+    {
+        try {
+            // Verificar si PHPExcel existe usando ruta absoluta
+            $phpExcelPath = __DIR__ . '/../assets/PHPExcel.php';
+            if (!file_exists($phpExcelPath)) {
+                throw new Exception('La biblioteca PHPExcel no está disponible en assets/. Verifica la instalación. Ruta buscada: ' . $phpExcelPath);
+            }
+            require_once $phpExcelPath;
+
+            $data = $this->getCargasLectivasNoLectivas($idsem, $codigo);
+
+            if (!$data) {
+                throw new Exception('No se pudieron obtener los datos de cargas.');
+            }
+
+            $objPHPExcel = new PHPExcel();
+            $objPHPExcel->setActiveSheetIndex(0);
+            $sheet = $objPHPExcel->getActiveSheet();
+            $sheet->setCellValue('A1', 'ID');
+            $sheet->setCellValue('B1', 'Código');
+            $sheet->setCellValue('C1', 'Actividad');
+            $sheet->setCellValue('D1', 'Horas');
+            $sheet->setCellValue('E1', 'Clasificación');
+            $sheet->setCellValue('F1', 'Fecha Inicio');
+            $sheet->setCellValue('G1', 'Fecha Fin');
+            $row = 2;
+            while ($row_data = fetchrow($data, -1)) {
+                $sheet->setCellValue('A'.$row, isset($row_data['idtrab']) ? $row_data['idtrab'] : '');
+                $sheet->setCellValue('B'.$row, isset($row_data['codigo']) ? $row_data['codigo'] : '');
+                $sheet->setCellValue('C'.$row, isset($row_data['actividad']) ? $row_data['actividad'] : '');
+                $sheet->setCellValue('D'.$row, isset($row_data['horas']) ? $row_data['horas'] : '');
+                $sheet->setCellValue('E'.$row, isset($row_data['clasificacion']) ? $row_data['clasificacion'] : '');
+                $sheet->setCellValue('F'.$row, isset($row_data['fecha_inicio']) ? $row_data['fecha_inicio'] : '');
+                $sheet->setCellValue('G'.$row, isset($row_data['fecha_fin']) ? $row_data['fecha_fin'] : '');
+                $row++;
+            }
+            cierra($data);
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+            $filename = 'reporte_cargas_' . date('YmdHis') . '.xls';
+
+            // Limpiar cualquier salida previa
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            header('Content-Type: application/vnd.ms-excel');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Content-Transfer-Encoding: binary');
+            header('Accept-Ranges: bytes');
+            header('Cache-Control: max-age=0');
+            header('Pragma: public');
+            $objWriter->save('php://output');
+            exit;
+        } catch (Exception $e) {
+            // En caso de error, mostrar mensaje y detener
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: text/html; charset=UTF-8');
+            echo '<html><body>';
+            echo '<h1>Error al generar el reporte Excel</h1>';
+            echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
+            echo '<p><a href="javascript:history.back()">Volver</a></p>';
+            echo '</body></html>';
+            exit;
+        }
+    }
+    public function getDownloadButtonWithJS($idsem, $codigo = null)
+    {
+        $codigoParam = $codigo ? "&codigo={$codigo}" : "";
+        $js = "<script>
+            function downloadReport() {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', 'download_excel.php?idsem={$idsem}{$codigoParam}', true);
+                xhr.responseType = 'blob';
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        var blob = new Blob([xhr.response], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = 'reporte_cargas.xlsx';
+                        link.click();
+                    }
+                };
+                xhr.send();
+            }
+        </script>";
+        $button = "<button onclick='downloadReport()'>Descargar Reporte Excel</button>";
+        return $js . $button;
     }
 }
 ?>
