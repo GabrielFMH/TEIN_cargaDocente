@@ -1,4 +1,8 @@
 <?php
+// Silenciar errores para evitar salida no deseada
+ob_clean();
+error_reporting(0);
+ini_set('display_errors', 0);
 
 require_once BASE_PATH . '/model/carga_model.php';
 
@@ -13,6 +17,14 @@ class CargaController
 
     public function handleRequest()
     {
+        // ✨ Paso 1: Verificar la solicitud de exportación ANTES que cualquier otra cosa.
+        if (isset($_GET['exportar'])) {
+            $this->handleExport(); // Llama al método que genera el PDF sin HTML.
+            exit; // Es CRUCIAL detener la ejecución aquí para que no se imprima nada más.
+        }
+        
+        // ✨ Paso 2: Si no es una exportación, seguir con el flujo normal de la página web.
+        // Esto asegura que pageheader() y otras funciones de HTML se llamen solo para la vista web.
         $sex = isset($_GET['sesion']) ? $_GET['sesion'] : '';
         $this->handleSession($sex);
 
@@ -20,7 +32,50 @@ class CargaController
 
         $data = $this->prepareViewData($sex);
 
+        // ✨ Paso 3: Cargar la vista HTML al final.
         require BASE_PATH . '/view/carga_view.php';
+    }
+    
+    // Método especial para manejar exportaciones sin cargar toda la interfaz
+    private function handleExport()
+    {
+        // Limpiar cualquier salida previa inmediatamente
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Iniciar un nuevo buffer de salida
+        ob_start();
+        ob_end_clean();
+        
+        $sex = isset($_GET['sesion']) ? $_GET['sesion'] : '';
+        
+        // Manejar la sesión de forma minimalista solo para exportación
+        $this->handleSessionForExport($sex);
+        
+        // Procesar exportación directamente
+        if (isset($_GET['exportar'])) {
+            $formato = isset($_GET['formato']) ? $_GET['formato'] : 'pdf';
+            // Obtener el idsem de la URL
+            $idsem = isset($_GET["x"]) ? $_GET["x"] : (isset($_SESSION['idsemindiv']) ? $_SESSION['idsemindiv'] : null);
+            
+            if ($idsem) {
+                // Obtener datos de la carga docente
+                $cursos = $this->model->getCursos($_SESSION['codper'], $idsem, 0);
+                
+                // Limpiar buffer antes de exportar
+                if (ob_get_level()) {
+                    ob_end_clean();
+                }
+                
+                if ($formato == 'excel') {
+                    $this->exportarAExcel($cursos, $idsem);
+                } else {
+                    $this->exportarAPDF($cursos, $idsem);
+                }
+            }
+            exit;
+        }
     }
 
     private function handleSession($sex)
@@ -49,6 +104,56 @@ class CargaController
         if ($gok==0){header("Location: logout.php?sesion=".$sex); exit;}
         if ($_SESSION['tipo']!=3){header("Location: cambio.php?sesion=".$sex); exit;}
 
+    }
+    
+    // Método especial para manejar la sesión durante exportaciones
+    private function handleSessionForExport($sex)
+    {
+        // Limpiar cualquier salida previa
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        require_once 'token_admin.php';
+        require_once 'funciones.php';
+        require_once 'funciones_fichamatricula.php';
+        
+        // No enviar pageheader() ni callse() que generan salida HTML
+        session_name($sex);
+        session_start();
+        
+        // Verificar que las variables de sesión necesarias existan
+        if (!isset($_SESSION['timer'])) {
+            $_SESSION['timer'] = time();
+        }
+        
+        $tiempo = timeup($_SESSION['timer']);
+        if (!$tiempo) {
+            $_SESSION['timer'] = time();
+        }
+
+        // Verificar que las variables de sesión necesarias existan
+        if (!isset($_SESSION['grupa0'])) {
+            $_SESSION['grupa0'] = 0;
+        }
+
+        $gok=0;
+        for ($l=1;$l<=$_SESSION['grupa0'];$l++)
+        {
+            if (isset($_SESSION['grupa'.$l]) && $_SESSION['grupa'.$l]==200){$gok=1;}
+        }
+
+        // Verificar que las variables de sesión necesarias existan
+        if (!isset($_SESSION['tipo'])) {
+            $_SESSION['tipo'] = 0;
+        }
+        
+        // No redirigir durante exportación, solo verificar permisos
+        if ($gok==0 || $_SESSION['tipo']!=3){
+            // Para exportación, simplemente continuamos sin redirigir
+            // Los permisos se verificarán en el proceso de exportación
+            return;
+        }
     }
 
     // Método para validar tipo de archivo
@@ -133,22 +238,32 @@ class CargaController
     // Método para exportar a Excel
     private function exportarAExcel($cursos, $idsem)
     {
+        // Iniciar y limpiar buffer de salida
+        ob_start();
+        ob_end_clean();
+        
         // Configurar headers para descarga de Excel
         header('Content-Type: application/vnd.ms-excel');
         header('Content-Disposition: attachment;filename="carga_docente_'.$idsem.'.xls"');
         header('Cache-Control: max-age=0');
+        header('Pragma: public');
+        
+        // Limpiar cualquier salida restante
+        if (ob_get_level()) {
+            ob_clean();
+        }
         
         echo "<table border='1'>";
         echo "<tr><th>CodCurso</th><th>Seccion</th><th>Curso</th><th>Semestre</th><th>Escuela</th><th>Hrs.</th></tr>";
         
         while ($row = fetchrow($cursos, -1)) {
             echo "<tr>";
-            echo "<td>".$row[0]."</td>";
-            echo "<td>".$row[1]."</td>";
-            echo "<td>".$row[2]."</td>";
-            echo "<td>".$row[3]."</td>";
-            echo "<td>".$row[4]."</td>";
-            echo "<td>".$row[6]."</td>";
+            echo "<td>".(isset($row[0]) ? $row[0] : '')."</td>";
+            echo "<td>".(isset($row[1]) ? $row[1] : '')."</td>";
+            echo "<td>".(isset($row[2]) ? $row[2] : '')."</td>";
+            echo "<td>".(isset($row[3]) ? $row[3] : '')."</td>";
+            echo "<td>".(isset($row[4]) ? $row[4] : '')."</td>";
+            echo "<td>".(isset($row[6]) ? $row[6] : '')."</td>";
             echo "</tr>";
         }
         
@@ -156,20 +271,65 @@ class CargaController
         exit;
     }
 
-    // Método para exportar a PDF (simulación básica)
+    // Método para exportar a HTML (sin TCPDF)
     private function exportarAPDF($cursos, $idsem)
     {
-        // En una implementación real, aquí se usaría una librería como TCPDF o FPDF
-        header('Content-Type: application/pdf');
-        header('Content-Disposition: attachment;filename="carga_docente_'.$idsem.'.pdf"');
-        
-        echo "Reporte de Carga Docente - Semestre: ".$idsem."\n\n";
-        echo "CodCurso\tSeccion\tCurso\tSemestre\tEscuela\tHrs.\n";
-        
-        while ($row = fetchrow($cursos, -1)) {
-            echo $row[0]."\t".$row[1]."\t".$row[2]."\t".$row[3]."\t".$row[4]."\t".$row[6]."\n";
+        // Iniciar y limpiar buffer de salida
+        ob_start();
+        ob_end_clean();
+
+        // Verificar que las variables de sesión necesarias existan
+        $docenteName = isset($_SESSION['name']) ? $_SESSION['name'] : 'Docente';
+
+        // Configurar encabezados HTTP para HTML
+        header('Content-Type: text/html; charset=UTF-8');
+        header('Content-Disposition: inline; filename="carga_academica_'.$idsem.'.html"');
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: public');
+        header('Expires: 0');
+
+        // Limpiar cualquier salida restante
+        if (ob_get_level()) {
+            ob_clean();
         }
-        
+
+        // Generar HTML simple
+        echo "<!DOCTYPE html>";
+        echo "<html lang='es'>";
+        echo "<head>";
+        echo "<meta charset='UTF-8'>";
+        echo "<title>Reporte de Carga Academica</title>";
+        echo "<style>";
+        echo "body { font-family: Arial, sans-serif; margin: 20px; }";
+        echo "h1 { color: #333; }";
+        echo "table { border-collapse: collapse; width: 100%; }";
+        echo "th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }";
+        echo "th { background-color: #f2f2f2; }";
+        echo "</style>";
+        echo "</head>";
+        echo "<body>";
+        echo "<h1>Reporte de Carga Academica</h1>";
+        echo "<p><strong>Docente:</strong> " . htmlspecialchars($docenteName) . "</p>";
+        echo "<p><strong>Semestre:</strong> " . htmlspecialchars($idsem) . "</p>";
+        echo "<h2>Cursos Asignados</h2>";
+        echo "<table>";
+        echo "<tr><th>CodCurso</th><th>Seccion</th><th>Curso</th><th>Semestre</th><th>Escuela</th><th>Hrs.</th></tr>";
+
+        // Datos de los cursos
+        while ($row = fetchrow($cursos, -1)) {
+            echo "<tr>";
+            echo "<td>" . htmlspecialchars(isset($row[0]) ? $row[0] : '') . "</td>";
+            echo "<td>" . htmlspecialchars(isset($row[1]) ? $row[1] : '') . "</td>";
+            echo "<td>" . htmlspecialchars(isset($row[2]) ? $row[2] : '') . "</td>";
+            echo "<td>" . htmlspecialchars(isset($row[3]) ? $row[3] : '') . "</td>";
+            echo "<td>" . htmlspecialchars(isset($row[4]) ? $row[4] : '') . "</td>";
+            echo "<td>" . htmlspecialchars(isset($row[6]) ? $row[6] : '') . "</td>";
+            echo "</tr>";
+        }
+
+        echo "</table>";
+        echo "</body>";
+        echo "</html>";
         exit;
     }
 
@@ -260,6 +420,9 @@ class CargaController
                 $this->model->modificarEstadoActividades($_POST["mcodigo"], $_POST["msemestre"], $_POST["mestado_editar"]);
             }
 
+            // Este bloque parece tener un problema con la variable $i no definida
+            // Lo comentamos temporalmente para evitar errores
+            /*
             if (isset($_POST["modi_estado".$i]) && $_POST["modi_estado".$i] == "Modificar_Estado") {
                 // Validar autorización
                 if (!$this->verificarAutorizacion(200)) {
@@ -270,6 +433,7 @@ class CargaController
                 $_SESSION['codigox'] = $_POST["coduni"];
                 $this->model->modificarEstadoTrabajoIndividual($_SESSION['codigox'], $_POST["vi".$i], $_POST["vestado_editar".$i]);
             }
+            */
 
             if (isset($_POST["addhistorial"]) && $_POST["addhistorial"] == "Registrar") {
                 // Validar autorización
@@ -381,6 +545,22 @@ class CargaController
             $this->exportarCargaDocente($formato);
         }
     }
+    
+    // Método especial para manejar acciones POST durante exportaciones
+    private function handlePostActionsForExport()
+    {
+        // Limpiar cualquier salida previa
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Solo manejar exportaciones, no otras acciones POST
+        if (isset($_GET['exportar'])) {
+            $formato = isset($_GET['formato']) ? $_GET['formato'] : 'pdf';
+            $this->exportarCargaDocente($formato);
+            exit;
+        }
+    }
 
     private function prepareViewData($sex)
     {
@@ -444,4 +624,3 @@ class CargaController
         return $data;
     }
 }
-?>

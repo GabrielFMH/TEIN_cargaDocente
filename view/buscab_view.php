@@ -45,9 +45,7 @@
     if ($_SESSION['codigo'] != 121212 && $_SESSION['codigo'] != 123456) {
         echo '<a href="buscab.php?tr=1&sesion='.$data['sex'].'" >TRABAJO INDIVIDUAL</font>';
     }
-    echo '</td>';
-    // Other header links...
-    echo '</tr></table>';
+ 
     
     echo '<br><br>';
 

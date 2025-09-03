@@ -1,5 +1,11 @@
 <?php
 // Este es el archivo de la vista: view/carga_view.php
+
+// Verificar si se está solicitando una exportación y evitar cargar la vista en ese caso
+if (isset($_GET['exportar'])) {
+    // No cargar la vista si se está exportando
+    return;
+}
 ?>
 <html>
 <head>
@@ -145,6 +151,8 @@ $(function(){
 <!--HASTA AQUI ES EL ACORDEON -->
 
 <title>Net.UPT.edu.pe</title>
+<!-- html2pdf.js v0.10.1 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body >
 
@@ -181,7 +189,7 @@ $(function(){
                 
                 while ($row = fetchrow($data['semestres'],-1))
 				{
-// 
+ // 
 					echo '<i><a class="menux1 tooltip" style="font-size:11px; text-align:left; background:#a6a6ac; color:white; padding-top:5px;" href="carga.php?sesion='.$data['sex'].'&x='.$row[0].'&tx='.$row[3].'"> '.$row[1].'  <span style="font-size:10px; padding-left:2px;">('.$row[0].')</span><span class="tooltiptext">'.$row[2].'</span></a></i>';
 					echo '<div id="side-block"></div>';
 				}
@@ -232,6 +240,7 @@ $(function(){
     echo ('</div>');
 
 echo '<div id="contents">';
+
 
 
 
@@ -288,6 +297,11 @@ if($data['director_depe']){
 
 echo '</tr>';
 echo '</table>';
+
+// Botón para imprimir usando FPDF
+echo '<div style="text-align: right; margin: 10px 0;">';
+echo '<button type="button" id="btnGenerarPDF" style="padding: 8px 15px; background-color: #1E88E5; color: white; border: none; border-radius: 4px; cursor: pointer;">Descargar Carga (PDF)</button>';
+echo '</div>';
 
 $na=0;
 $mj=0;
@@ -508,4 +522,20 @@ function msj()
 
     </script>
 <!--HASTA AQUI ES EL SCRIPT PARA LOS BOTONES-->
+<script type="text/javascript">
+/* === Abrir diálogo de impresión del navegador (Ctrl+P) === */
+document.addEventListener('DOMContentLoaded', function () {
+    var btn = document.getElementById('btnGenerarPDF');
+    if (!btn) return;
+
+    btn.addEventListener('click', function (ev) {
+        ev.preventDefault();   // evita que el botón envíe el formulario
+        /* Opcional: desplazarse al inicio para asegurar que todo se pinte */
+        window.scrollTo(0, 0);
+
+        /* Llamamos a la herramienta de impresión nativa del navegador */
+        window.print();
+    });
+});
+</script>
 </html>
