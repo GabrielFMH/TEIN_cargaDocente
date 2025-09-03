@@ -543,9 +543,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnExcel) {
         btnExcel.addEventListener('click', function (ev) {
             ev.preventDefault();
-            // Redirigir a la URL de exportación Excel
+            // Crear un enlace temporal para descargar el archivo Excel
             var url = 'carga.php?sesion=<?php echo $data['sex']; ?>&x=<?php echo $data['idsem']; ?>&exportar=1&formato=excel';
-            window.location.href = url;
+            var link = document.createElement('a');
+            link.href = url;
+            link.download = 'carga_docente_<?php echo $data['idsem']; ?>.xls';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
     }
 });
