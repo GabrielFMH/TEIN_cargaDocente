@@ -649,25 +649,25 @@ class CargaModel
             $sheet->setCellValue('G1', 'Fecha Fin');
             $row = 2;
             while ($row_data = fetchrow($data, -1)) {
-                $sheet->setCellValue('A'.$row, isset($row_data['idtrab']) ? $row_data['idtrab'] : '');
-                $sheet->setCellValue('B'.$row, isset($row_data['codigo']) ? $row_data['codigo'] : '');
-                $sheet->setCellValue('C'.$row, isset($row_data['actividad']) ? $row_data['actividad'] : '');
-                $sheet->setCellValue('D'.$row, isset($row_data['horas']) ? $row_data['horas'] : '');
-                $sheet->setCellValue('E'.$row, isset($row_data['clasificacion']) ? $row_data['clasificacion'] : '');
-                $sheet->setCellValue('F'.$row, isset($row_data['fecha_inicio']) ? $row_data['fecha_inicio'] : '');
-                $sheet->setCellValue('G'.$row, isset($row_data['fecha_fin']) ? $row_data['fecha_fin'] : '');
+                $sheet->setCellValue('A'.$row, isset($row_data[0]) ? $row_data[0] : '');
+                $sheet->setCellValue('B'.$row, isset($row_data[1]) ? $row_data[1] : '');
+                $sheet->setCellValue('C'.$row, isset($row_data[2]) ? $row_data[2] : '');
+                $sheet->setCellValue('D'.$row, isset($row_data[3]) ? $row_data[3] : '');
+                $sheet->setCellValue('E'.$row, isset($row_data[6]) ? $row_data[6] : '');
+                $sheet->setCellValue('F'.$row, isset($row_data[4]) ? $row_data[4] : '');
+                $sheet->setCellValue('G'.$row, isset($row_data[5]) ? $row_data[5] : '');
                 $row++;
             }
             cierra($data);
-            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
-            $filename = 'reporte_cargas_' . date('YmdHis') . '.xls';
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+            $filename = 'reporte_cargas_' . date('YmdHis') . '.xlsx';
 
             // Limpiar cualquier salida previa
             if (ob_get_level()) {
                 ob_end_clean();
             }
 
-            header('Content-Type: application/vnd.ms-excel');
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment;filename="' . $filename . '"');
             header('Content-Transfer-Encoding: binary');
             header('Accept-Ranges: bytes');

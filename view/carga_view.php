@@ -153,6 +153,8 @@ $(function(){
 <title>Net.UPT.edu.pe</title>
 <!-- html2pdf.js v0.10.1 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- SheetJS (xlsx.js) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body >
 
@@ -301,7 +303,8 @@ echo '</table>';
 // Botones para imprimir y exportar
 echo '<div style="text-align: right; margin: 10px 0;">';
 echo '<button type="button" id="btnGenerarPDF" style="padding: 8px 15px; background-color: #1E88E5; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Descargar Carga (PDF)</button>';
-echo '<button type="button" id="btnGenerarExcel" style="padding: 8px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Descargar Carga (Excel)</button>';
+echo '<button type="button" id="btnGenerarExcel" style="padding: 8px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Descargar Carga (Excel)</button>';
+echo '<button type="button" id="btnGenerarExcelWebScraping" style="padding: 8px 15px; background-color: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer;">Descargar con Excel usando WebScraping</button>';
 echo '</div>';
 
 $na=0;
@@ -547,10 +550,102 @@ document.addEventListener('DOMContentLoaded', function () {
             var url = 'carga.php?sesion=<?php echo $data['sex']; ?>&x=<?php echo $data['idsem']; ?>&exportar=1&formato=excel';
             var link = document.createElement('a');
             link.href = url;
-            link.download = 'carga_docente_<?php echo $data['idsem']; ?>.xls';
+            link.download = 'carga_docente_<?php echo $data['idsem']; ?>.xlsx';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        });
+    }
+    /* === Descargar Excel usando WebScraping === */
+    var btnExcelWebScraping = document.getElementById('btnGenerarExcelWebScraping');
+    if (btnExcelWebScraping) {
+        btnExcelWebScraping.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            
+            // Crear un nuevo libro de trabajo
+            var wb = XLSX.utils.book_new();
+            
+            // Encontrar el contenedor principal de contenidos
+            var contentsDiv = document.getElementById('contents');
+            if (!contentsDiv) return;
+            
+            // Crear un contenedor temporal para el contenido que queremos exportar
+            var tempDiv = document.createElement('div');
+            
+            // Encontrar el elemento "Últimos Accesos" y el elemento "REGISTRO DE HORARIO DE TRABAJO"
+            var ultimosAccesos = null;
+            var registroHorario = null;
+            
+            // Buscar "Últimos Accesos" por su encabezado h3
+            var headers = contentsDiv.querySelectorAll('h3');
+            for (var i = 0; i < headers.length; i++) {
+                if (headers[i].textContent.includes('Últimos Accesos')) {
+                    ultimosAccesos = headers[i];
+                    break;
+                }
+            }
+            
+            // Buscar "REGISTRO DE HORARIO DE TRABAJO" por su texto en el formulario
+            var formElements = contentsDiv.querySelectorAll('form');
+            for (var i = 0; i < formElements.length; i++) {
+                if (formElements[i].textContent.includes('REGISTRO DE HORARIO DE TRABAJO')) {
+                    registroHorario = formElements[i];
+                    break;
+                }
+            }
+            
+            // Si encontramos ambos elementos, extraer el contenido entre ellos
+            if (ultimosAccesos && registroHorario) {
+                // Crear una lista de elementos entre "Últimos Accesos" y "REGISTRO DE HORARIO DE TRABAJO"
+                var currentNode = ultimosAccesos.nextSibling;
+                while (currentNode && currentNode !== registroHorario) {
+                    if (currentNode.nodeType === 1) { // Solo elementos HTML
+                        // Clonar el nodo para no afectar el DOM original
+                        tempDiv.appendChild(currentNode.cloneNode(true));
+                    }
+                    currentNode = currentNode.nextSibling;
+                }
+            } else {
+                // Si no encontramos los marcadores, usar un enfoque alternativo
+                // Extraer las tablas principales de cursos y últimos accesos
+                var tablas = contentsDiv.querySelectorAll('table');
+                for (var i = 0; i < tablas.length; i++) {
+                    var tabla = tablas[i];
+                    // Incluir tablas de cursos (las que tienen encabezados como CodCurso, Seccion, etc.)
+                    var thElements = tabla.querySelectorAll('th');
+                    if (thElements.length > 0) {
+                        var firstTh = thElements[0];
+                        if (firstTh.textContent.includes('sel') || firstTh.textContent.includes('CodCurso')) {
+                            tempDiv.appendChild(tabla.cloneNode(true));
+                            // Agregar un salto después de la tabla de cursos
+                            tempDiv.appendChild(document.createElement('br'));
+                        }
+                        // Incluir tabla de "Últimos Accesos"
+                        else if (firstTh.textContent.includes('Nº') || firstTh.textContent.includes('CodCurso')) {
+                            // Verificar si es la tabla de últimos accesos por su encabezado
+                            var parent = tabla.closest('div');
+                            if (parent && parent.previousElementSibling &&
+                                parent.previousElementSibling.tagName === 'H3' &&
+                                parent.previousElementSibling.textContent.includes('Últimos Accesos')) {
+                                tempDiv.appendChild(tabla.cloneNode(true));
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Convertir el contenido a una hoja de Excel
+            if (tempDiv.children.length > 0) {
+                // Crear una tabla temporal para organizar mejor los datos
+                var tempTable = document.createElement('table');
+                tempTable.appendChild(tempDiv);
+                var ws = XLSX.utils.table_to_sheet(tempTable, {sheet:"Carga Docente"});
+                XLSX.utils.book_append_sheet(wb, ws, "Carga Docente");
+            }
+            
+            // Generar el archivo Excel y descargarlo
+            var filename = 'carga_docente_webscraping_<?php echo $data['idsem']; ?>.xlsx';
+            XLSX.writeFile(wb, filename);
         });
     }
 });
