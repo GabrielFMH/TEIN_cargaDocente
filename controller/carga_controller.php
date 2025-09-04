@@ -764,6 +764,8 @@ class CargaController
                 $content .= '<div style="text-align: right; margin: 10px 0;">';
                 $content .= '<button type="button" id="btnGenerarPDF" style="padding: 8px 15px; background-color: #1E88E5; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Descargar Carga (PDF)</button>';
                 $content .= '<button type="button" id="btnGenerarExcelWebScraping" style="padding: 8px 15px; background-color: #49c929ff; color: white; border: none; border-radius: 4px; cursor: pointer;">Descargar Carga (EXCEL)</button>';
+                $content .= '<br><br>';
+                $content .= '<button type="button" id="btnVerAutoridades" style="padding: 8px 15px; background-color: #f12d0eff; color: white; border: none; border-radius: 4px; cursor: pointer;">Ver Autoridades Academicas</button>';
                 $content .= '</div>';
         
                 $na=0;
@@ -935,12 +937,15 @@ class CargaController
             $data['ultimos_accesos'] = $this->model->getUltimosAccesos($pIdDocenteDatoEvaluacion, $data['idsem']);
         }
 
+        // Obtener autoridades académicas del docente
+        $data['autoridades'] = $this->model->getAutoridadesAcademicas($_SESSION['codigo']);
+
         // Generate menu
                 $data['menu'] = $this->generateMenu($data);
-        
+
                 // Generate content
                 $data['content'] = $this->generateContent($data);
-        
+
                 return $data;
     }
 }

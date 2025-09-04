@@ -712,5 +712,27 @@ class CargaModel
         $button = "<button onclick='downloadReport()'>Descargar Reporte Excel</button>";
         return $js . $button;
     }
+
+    // Método para obtener autoridades académicas del docente
+    public function getAutoridadesAcademicas($codigo)
+    {
+        // Obtener iddepe del docente
+        $iddepe = $this->getDirectorIdDepe($codigo);
+
+        if (!$iddepe) {
+            return array('director' => 'No disponible', 'decano' => 'No disponible');
+        }
+
+        // Consultar tabla depe para obtener director y decano
+        $sql = "SELECT director, decano FROM depe WHERE iddepe = {$iddepe}";
+        $result = luis($this->conn, $sql);
+        $row = fetchrow($result, -1);
+        cierra($result);
+
+        return array(
+            'director' => $row[0] ? $row[0] : 'No disponible',
+            'decano' => $row[1] ? $row[1] : 'No disponible'
+        );
+    }
 }
 ?>

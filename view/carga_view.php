@@ -171,6 +171,17 @@ echo '<div id="contents">';
 echo $data['content'];
 
 ?>
+
+<!-- Modal para mostrar autoridades -->
+<div id="modalAutoridades" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 10px; width: 400px; text-align: center;">
+        <h3>Autoridades Académicas</h3>
+        <p><strong>Director de Escuela:</strong> <?php echo isset($data['autoridades']['director']) ? $data['autoridades']['director'] : 'No disponible'; ?></p>
+        <p><strong>Decano de Escuela:</strong> <?php echo isset($data['autoridades']['decano']) ? $data['autoridades']['decano'] : 'No disponible'; ?></p>
+        <button onclick="cerrarModal()" style="padding: 10px 20px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">Cerrar</button>
+    </div>
+</div>
+
 </div>
 </body>
 
@@ -451,7 +462,27 @@ document.addEventListener('DOMContentLoaded', function () {
                     range.e.r = newEndRow;
                     ws['!ref'] = XLSX.utils.encode_range(range);
                 }
-            
+
+                // Aplicar estilos a las celdas
+                for (var cell in ws) {
+                    if (cell[0] === '!') continue;
+                    var cellRef = XLSX.utils.decode_cell(cell);
+                    if (!ws[cell].s) ws[cell].s = {};
+                    // Bordes gruesos
+                    ws[cell].s.border = {
+                        top: { style: "thick", color: { rgb: "000000" } },
+                        bottom: { style: "thick", color: { rgb: "000000" } },
+                        left: { style: "thick", color: { rgb: "000000" } },
+                        right: { style: "thick", color: { rgb: "000000" } }
+                    };
+                    // Color de fondo
+                    if (cellRef.r === 0) {
+                        ws[cell].s.fill = { patternType: "solid", fgColor: { rgb: "CCCCCC" } }; // gris para encabezados
+                    } else {
+                        ws[cell].s.fill = { patternType: "solid", fgColor: { rgb: "FFFFFF" } }; // blanco para datos
+                    }
+                }
+
                 XLSX.utils.book_append_sheet(wb, ws, "Carga Docente");
             }
             
@@ -459,6 +490,23 @@ document.addEventListener('DOMContentLoaded', function () {
             var filename = 'carga_docente_webscraping_<?php echo $data['idsem']; ?>.xlsx';
             XLSX.writeFile(wb, filename);
         });
+    }
+});
+
+// Función para mostrar el modal de autoridades
+document.getElementById('btnVerAutoridades').addEventListener('click', function() {
+    document.getElementById('modalAutoridades').style.display = 'block';
+});
+
+function cerrarModal() {
+    document.getElementById('modalAutoridades').style.display = 'none';
+}
+
+// Cerrar modal al hacer clic fuera
+window.addEventListener('click', function(event) {
+    var modal = document.getElementById('modalAutoridades');
+    if (event.target == modal) {
+        modal.style.display = 'none';
     }
 });
 </script>
