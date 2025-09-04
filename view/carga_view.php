@@ -390,7 +390,7 @@ if (isset($data['tr'])==true ){
 	$sem = $data['idsem'];
 	individual($data['codigo'], $data['sex'], $data['codper'], 0, $file_php,$sem);
 }
-
+echo '</br>';
 if(isset($data['tr'])==true)
 {
 	echo  '<br><br><form method="post" action="carga.php?tr=1&sesion='.$data['sex'].'&x='.$data['idsem'].'" name="registro" id="registro" enctype="multipart/form-data">
@@ -585,25 +585,46 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
             
-            // Buscar "REGISTRO DE HORARIO DE TRABAJO" por su texto en el formulario
-            var formElements = contentsDiv.querySelectorAll('form');
-            for (var i = 0; i < formElements.length; i++) {
-                if (formElements[i].textContent.includes('REGISTRO DE HORARIO DE TRABAJO')) {
-                    registroHorario = formElements[i];
-                    break;
-                }
-            }
+            // Buscar "REGISTRO DE HORARIO DE TRABAJO" por su id
+            registroHorario = contentsDiv.querySelector('#registro');
             
-            // Si encontramos ambos elementos, extraer el contenido entre ellos
+            // Si encontramos ambos elementos, extraer el contenido entre los dos <br> especificados
             if (ultimosAccesos && registroHorario) {
-                // Crear una lista de elementos entre "Últimos Accesos" y "REGISTRO DE HORARIO DE TRABAJO"
+                // Encontrar el segundo <br> después de ultimosAccesos
+                var startBr = null;
+                var brCount = 0;
                 var currentNode = ultimosAccesos.nextSibling;
-                while (currentNode && currentNode !== registroHorario) {
-                    if (currentNode.nodeType === 1) { // Solo elementos HTML
-                        // Clonar el nodo para no afectar el DOM original
-                        tempDiv.appendChild(currentNode.cloneNode(true));
+                while (currentNode) {
+                    if (currentNode.tagName === 'BR') {
+                        brCount++;
+                        if (brCount === 2) {
+                            startBr = currentNode;
+                            break;
+                        }
                     }
                     currentNode = currentNode.nextSibling;
+                }
+            
+                // Encontrar el último <br> antes de registroHorario
+                var endBr = null;
+                currentNode = registroHorario.previousSibling;
+                while (currentNode) {
+                    if (currentNode.tagName === 'BR') {
+                        endBr = currentNode;
+                        break;
+                    }
+                    currentNode = currentNode.previousSibling;
+                }
+            
+                // Extraer el contenido entre startBr y endBr
+                if (startBr && endBr) {
+                    currentNode = startBr.nextSibling;
+                    while (currentNode && currentNode !== endBr) {
+                        if (currentNode.nodeType === 1) { // Solo elementos HTML
+                            tempDiv.appendChild(currentNode.cloneNode(true));
+                        }
+                        currentNode = currentNode.nextSibling;
+                    }
                 }
             } else {
                 // Si no encontramos los marcadores, usar un enfoque alternativo
@@ -640,6 +661,60 @@ document.addEventListener('DOMContentLoaded', function () {
                 var tempTable = document.createElement('table');
                 tempTable.appendChild(tempDiv);
                 var ws = XLSX.utils.table_to_sheet(tempTable, {sheet:"Carga Docente"});
+            
+                // Remover filas 5 a 12 (0-based: 4 a 11)
+                var originalRange = XLSX.utils.decode_range(ws['!ref']);
+                var newWs = {};
+                var newRowIndex = 0;
+                // Copiar filas 0-3
+                for (var r = 0; r < 4; r++) {
+                    for (var c = originalRange.s.c; c <= originalRange.e.c; c++) {
+                        var cellAddr = XLSX.utils.encode_cell({r: r, c: c});
+                        if (ws[cellAddr]) {
+                            var newCellAddr = XLSX.utils.encode_cell({r: newRowIndex, c: c});
+                            newWs[newCellAddr] = ws[cellAddr];
+                        }
+                    }
+                    newRowIndex++;
+                }
+                // Saltar filas 4-11
+                // Copiar filas desde 12 en adelante
+                for (var r = 12; r <= originalRange.e.r; r++) {
+                    for (var c = originalRange.s.c; c <= originalRange.e.c; c++) {
+                        var cellAddr = XLSX.utils.encode_cell({r: r, c: c});
+                        if (ws[cellAddr]) {
+                            var newCellAddr = XLSX.utils.encode_cell({r: newRowIndex, c: c});
+                            newWs[newCellAddr] = ws[cellAddr];
+                        }
+                    }
+                    newRowIndex++;
+                }
+                // Actualizar el rango
+                var newRange = {
+                    s: {r: 0, c: originalRange.s.c},
+                    e: {r: newRowIndex - 1, c: originalRange.e.c}
+                };
+                newWs['!ref'] = XLSX.utils.encode_range(newRange);
+                // Reemplazar ws
+                ws = newWs;
+            
+                // Remover las últimas 12 filas antes de generar el Excel
+                var range = XLSX.utils.decode_range(ws['!ref']);
+                var totalRows = range.e.r - range.s.r + 1;
+                if (totalRows > 12) {
+                    var newEndRow = range.e.r - 12;
+                    // Eliminar las celdas de las últimas 12 filas
+                    for (var row = newEndRow + 1; row <= range.e.r; row++) {
+                        for (var col = range.s.c; col <= range.e.c; col++) {
+                            var cellAddress = XLSX.utils.encode_cell({r: row, c: col});
+                            delete ws[cellAddress];
+                        }
+                    }
+                    // Actualizar el rango
+                    range.e.r = newEndRow;
+                    ws['!ref'] = XLSX.utils.encode_range(range);
+                }
+            
                 XLSX.utils.book_append_sheet(wb, ws, "Carga Docente");
             }
             
