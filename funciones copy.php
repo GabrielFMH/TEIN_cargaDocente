@@ -1659,10 +1659,10 @@ function fncEnvioEmailUpt($email, $correo, $mensaje_correo){
 	$para 	   = $email;
 	$titulo    = html_entity_decode($correo);
 	$mensaje   = $mensaje_correo;
-
-	$headers = "MIME-Version: 1.0\r\n";
+	
+	$headers = "MIME-Version: 1.0\r\n"; 
 	$headers .= "Content-type: text/html; charset=iso-8859-1 \r\n";
-
+	
 	$email_from = "informa@upt.edu.pe";
 	$headers .= 'From: '.$email_from."\r\n".
 	'Reply-To: '.$email_from."\r\n" .
@@ -1673,47 +1673,8 @@ function fncEnvioEmailUpt($email, $correo, $mensaje_correo){
 	} else {
 	 	$e = @error_get_last();
 	 	return "Error al enviar el mail. ".$e['message'];
-	}
-
-}
-
-function getAutoridadesAcademicas(){
-	$conn = conex();
-	$sql = "SELECT
-	    CP.CodPer AS [Codigo_Personal],
-	    CP.Nombres AS [Nombres_Docente],
-	    CP.ApellidoPaterno AS [Apellido_Paterno_Docente],
-	    CP.ApellidoMaterno AS [Apellido_Materno_Docente],
-	    CP.Cargo AS [Cargo_Identificado]
-	FROM
-	    dbo.Cho_Persona AS CP
-	LEFT JOIN
-	    dbo.depe AS D ON CP.IdPtaDependencia = D.iddepe
-	WHERE
-	    (CP.Cargo LIKE '%Decano%'
-	    OR CP.Cargo LIKE '%Director%Escuela%'
-	    OR CP.Cargo LIKE '%Director%Departamento%')
-	    AND CP.Estado = 1
-	ORDER BY
-	    CP.Cargo, CP.ApellidoPaterno, CP.ApellidoMaterno";
-
-	$result = luis($conn, $sql);
-	$autoridades = array();
-
-	while ($row = fetchrow($result, -1)) {
-		$autoridades[] = array(
-			'codigo_personal' => $row[0],
-			'nombres' => $row[1],
-			'apellido_paterno' => $row[2],
-			'apellido_materno' => $row[3],
-			'cargo' => $row[4]
-		);
-	}
-
-	cierra($result);
-	noconex($conn);
-
-	return $autoridades;
+	}  
+	
 }
 
 

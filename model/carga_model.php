@@ -716,22 +716,25 @@ class CargaModel
     // Método para obtener autoridades académicas del docente
     public function getAutoridadesAcademicas($codigo)
     {
-        // Obtener iddepe del docente
-        $iddepe = $this->getDirectorIdDepe($codigo);
+        require_once 'funciones.php';
+        $autoridades = getAutoridadesAcademicas();
 
-        if (!$iddepe) {
-            return array('director' => 'No disponible', 'decano' => 'No disponible');
+        $directores = array();
+        $decanos = array();
+
+        foreach ($autoridades as $autoridad) {
+            $nombre_completo = $autoridad['nombres'] . ' ' . $autoridad['apellido_paterno'] . ' ' . $autoridad['apellido_materno'];
+            if (strpos(strtolower($autoridad['cargo']), 'director') !== false) {
+                $directores[] = $nombre_completo;
+            }
+            if (strpos(strtolower($autoridad['cargo']), 'decano') !== false) {
+                $decanos[] = $nombre_completo;
+            }
         }
 
-        // Consultar tabla depe para obtener director y decano
-        $sql = "SELECT director, decano FROM depe WHERE iddepe = {$iddepe}";
-        $result = luis($this->conn, $sql);
-        $row = fetchrow($result, -1);
-        cierra($result);
-
         return array(
-            'director' => $row[0] ? $row[0] : 'No disponible',
-            'decano' => $row[1] ? $row[1] : 'No disponible'
+            'directores' => $directores,
+            'decanos' => $decanos
         );
     }
 }
