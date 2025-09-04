@@ -612,7 +612,271 @@ class CargaController
         }
     }
 
-    private function prepareViewData($sex)
+    private function generateMenu($data)
+    {
+        $menu = '';
+
+        /*MENU LATERAL IZQUIERDO*/
+        $menu .= ('<link href="site.css" type="text/css" rel="stylesheet">');
+        helpx(10701,$data['sex']);
+
+        $menu .= ('<div id="root-row2">');
+        $menu .= ('<div id="crumbs"> ');
+        $menu .= ('</div>');
+        $menu .= ('</div>');
+
+        $menu .= ('<div id="nav">');
+        $menu .= ('<div id="menu-block">');
+        $menu .= ('<a class="menux1" href="inicio.php?sesion='.$data['sex'].'">Inicio</a>');
+        // if( $_SESSION['codigo'] == 298907 ){
+        $menu .= ('<div id="side-block"></div>');
+        $menu .= ('<a class="menux1" href="dusuario.php?sesion='.$data['sex'].'">Datos Docente</a>');
+        // }
+        // echo $_SESSION['grupa0'];
+        For ($l=1;$l<=$data['grupa0'];$l++)
+        {
+            switch ($data['grupa'.$l]) {
+                case 100:
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<a class="menux1" href="alumno.php?sesion='.$data['sex'].'">Alumno</a>';
+                    break;
+                case 200:
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<a class="menuy1" href="carga.php?sesion='.$data['sex'].'">Carga</a>';
+                    $menu .= '<div id="side-block"></div>';
+
+                    while ($row = fetchrow($data['semestres'],-1))
+                    {
+                        //
+                        $menu .= '<i><a class="menux1 tooltip" style="font-size:11px; text-align:left; background:#a6a6ac; color:white; padding-top:5px;" href="carga.php?sesion='.$data['sex'].'&x='.$row[0].'&tx='.$row[3].'"> '.$row[1].'  <span style="font-size:10px; padding-left:2px;">('.$row[0].')</span><span class="tooltiptext">'.$row[2].'</span></a></i>';
+                        $menu .= '<div id="side-block"></div>';
+                    }
+
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<a class="menux1" href="Elearning.php?sesion='.$data['sex'].'" target="_blank">Aula Virtual</a>';
+
+
+                    //if ($_SESSION['padl']==1)
+                    //{
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<a class="menux1" href="asistenciap.php?sesion='.$data['sex'].'">Parte Asistencia</a>';
+                    //}
+
+                    break;
+                case 300:
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<a class="menux1" href="estadistica.php?sesion='.$data['sex'].'">Estadistica</a>';
+                    break;
+                case 400:
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<a class="menux1" href="busca.php?sesion='.$data['sex'].'">Busqueda</a>';
+                    break;
+                case 700:
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<a class="menux1" href="biblioteca.php?sesion='.$data['sex'].'" target="_blank">Biblioteca</a>';
+                    break;
+
+            }
+        }
+
+        // ************* 	LOGO 	******************
+        $menu .= '<div id="side-block"></div>';
+        $menu .= '<br>';
+        $menu .= '<br>';
+        // logo WIFI
+        //echo '<br><center><a href="alumno.php?sesion='.$data['sex'].'&wf=1" ><img width="74" height="50"  alt="Clic para generar su clave Wifi" src="imagenes/logo_wifi.png" border=0><br><font size =2px> GENERAR CLAVE WIFI</font></a></center><b>';
+
+        if ($data['wf']==1){
+            $menu .= '<br>';
+            $menu .= '<center>';
+            $menu .= $data['wifi'].'</b><br>';
+            $menu .= '</center>';
+        }
+
+                // ************* 	HASTA AQUI LOGO 	******************
+                $menu .= ('</div>');
+                $menu .= ('</div>');
+        
+                return $menu;
+            }
+        
+            private function generateContent($data)
+            {
+                $content = '';
+        
+                $content .= '<form method="POST" action="carga.php?sesion='.$data['sex'].'" name="frminicio">';
+                $content .= '<INPUT TYPE="hidden" NAME="op" value="0" >';
+                $content .= '<table border="0" width="100%">';
+                $content .= '<tr>';
+        
+                if($data['semestre_info']){
+                    $rowdir = fetchrow($data['semestre_info'], -1);
+                    $semestre=$rowdir[0];
+                    $obssemestre=$rowdir[1];
+                }
+        
+                $content .= '<td width="550">';
+                if($data['idsem'] > 0){
+                    $content .= '<font size="2"><strong>Semestre:</strong> ('. $data['idsem'] .') - '. $obssemestre . '</font><br>';
+                }
+                $content .= '<font size="2"><strong>Docente:</strong> '.$data['name'].'</font>';
+                $content .= '</td>';
+        
+                if ($data['idsem'] == '')
+                {
+                    $content .= "<font size='4' style='color: 102368;'>Hacer clic en el SEMESTRE del menu izquierdo.</font>";
+                    $content .= '</tr>';
+                    $content .= '</table>';
+                    $content .= '</form>';
+                    return $content;
+                }
+        
+                if(!$data['esSemestreTaex']){
+                    $content .= '<td><font size="1"><a style="font-size:12px;" href="carga.php?tr=1&sesion='.$data['sex'].'&x='.$data['idsem'].'" >TRABAJO INDIVIDUAL '.$obssemestre.' </a></font>  <font size="1" face="Arial">
+                                            <blink>
+                                                <a href="documentos/PIT_Docente/ActividadesPITGA_V2.pdf" target="_blank">
+                                                    <center style="color: red;">( Guía PIT )</center>
+                                                </a>
+                                            </blink>
+                                            </font></td>';
+                }
+        
+                if($data['director_depe']){
+                    $rowdir = fetchrow($data['director_depe'], -1);
+                    $iddepedirec=$rowdir[0];
+                    require_once('encripta_pdf.php');
+                    if (($iddepedirec>0) or ($data['codigo']==117584) or ($data['codigo']==	202848))
+                    {
+                        //echo '<td><font size="2"><a target="_blank" href="http://www.upt.edu.pe/epic2/resultado.php" >Reporte de resultados de encuesta</a></font></td>';
+                    }
+        
+                    if (($data['codigo']==117584) or ($data['codigo']==	202848)or ($data['codigo']==141414)or ($data['codigo']==109684)or ($data['codigo']==124717))
+                    {
+                        $content .= '<td><font size="2"><a target="_blank" href="http://www.upt.edu.pe/epic2/resultadovi.php" >Reporte de resultados de encuesta VICERRECTOR y RECTOR(A)</a></font></td>';
+                    }
+                }
+        
+                $content .= '</tr>';
+                $content .= '</table>';
+        
+                // Botones para imprimir y exportar
+                $content .= '<div style="text-align: right; margin: 10px 0;">';
+                $content .= '<button type="button" id="btnGenerarPDF" style="padding: 8px 15px; background-color: #1E88E5; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Descargar Carga (PDF)</button>';
+                $content .= '<button type="button" id="btnGenerarExcelWebScraping" style="padding: 8px 15px; background-color: #49c929ff; color: white; border: none; border-radius: 4px; cursor: pointer;">Descargar Carga (EXCEL)</button>';
+                $content .= '</div>';
+        
+                $na=0;
+                $mj=0;
+                $ton=0;
+        
+                $content .= '<table border="0" ><tr><th bgcolor="#DBEAF5" ><font size="1">sel</font></th><th bgcolor="#DBEAF5" ><font size="1">CodCurso</font></th><th bgcolor="#DBEAF5" ><font size="1">Seccion</font></th><th bgcolor="#DBEAF5" ><font size="1">Curso</font></th><th bgcolor="#DBEAF5" ><font size="1">Semestre</font></th><th bgcolor="#DBEAF5" ><font size="1">Escuela</font></th><th bgcolor="#DBEAF5" ><font size="1">Hrs.</font></th>';
+                $content .= '<th bgcolor="#DBEAF5" ><font size="1">Consolidado</font></th>';
+                $content .= '</tr>';
+        
+                if($data['cursos']){
+                    while ($row =fetchrow($data['cursos'],-1))
+                    {
+                        $na++;
+                        if ($ton==1){$tcol='bgcolor="#F3F9FC"';$ton=0;}else{$tcol='';$ton=1;}
+                        $content .= ' <tr '.$tcol.'><td><input type="radio" value="'.$na.'" name="R1" onClick="javascript:pele('.$na.')" >&nbsp;&nbsp;</td>';
+                        $content .= ' <td '.$tcol.'><font size="1">'.$row[0].'</font></td>';
+                        $content .= ' <td '.$tcol.'><font size="1">'.$row[1].'</font></td>';
+                        $content .= ' <td '.$tcol.'><font size="1">'.$row[2].'</font></td>';
+                        $content .= ' <td '.$tcol.'><font size="1">'.$row[3].'</font></td>';
+                        $content .= ' <td '.$tcol.'><font size="1">'.$row[4].'</font></td>';
+                        $content .= ' <td '.$tcol.'><font size="1">'.$row[6].'</font></td>';
+                        $content .= '<input name="codcur" type="hidden" value="'.$row[0].'">';
+                        $content .= '<input name="codp" type="hidden" value="'.$data['codper'].'">';
+                        // CORRECCIÓN: Usar buscacxv2.php en lugar de carga.php
+                        $content .= '<td '.$tcol.'><font size="1"><a href=# onclick="javascript:window.open(\'buscacxv2.php?sesion='.$data['sex'].'&o='.$row[5].'&taex='.$row[9].'\',\'otra\',\'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=no,width=850,height=650,top=40,left=50\');return false"><center><img src="imagenes/view.gif" width=18 height=20 alt="Consolidado" border=0></center> </a></font></td>';
+                        $content .= '</tr>';
+                        if ($row[4]=='Ingeniería Civil'){$mj=1;}
+        
+                    }
+                }
+        
+                $content .= '<table border="0" cellpadding="10" ><tr><td width="132" ></td></tr></table>';
+                $content .= '</table>';
+                $content .= '</form>';
+        
+                if(isset($data['ultimos_accesos'])){
+                    if ( numrow($data['ultimos_accesos']) > 0 ){
+                        $content .= '<h3>Últimos Accesos</h3>';
+                        $content .= '<table border="0" cellspacing="2">';
+                        $content .= '<tr>';
+                        $content .= '<th bgcolor="#DBEAF5"><font size="1">&nbsp;&nbsp;N&#176;&nbsp;&nbsp;</font></th>';
+                        $content .= '<th bgcolor="#DBEAF5"><font size="1">CodCurso</font></th>';
+                        $content .= '<th bgcolor="#DBEAF5"><font size="1">Curso</font></th>';
+                        $content .= '<th bgcolor="#DBEAF5"><font size="1">Seccion</font></th>';
+                        $content .= '<th bgcolor="#DBEAF5"><font size="1">Usuario Ingreso</font></th>';
+                        $content .= '<th bgcolor="#DBEAF5"><font size="1">Fecha Ingreso</font></th>';
+                        $content .= '</tr>';
+        
+                        $nc=0;
+                        $tcol='';
+                        $ton=0;
+        
+                        while ($row = fetchrow($data['ultimos_accesos'],-1))
+                        {
+                            $nc++;
+        
+                            if ($ton==1){$tcol='class="lin1"';$ton=0;}else{$tcol='class="lin0"';$ton=1;}
+                            $content .= '<tr '.$tcol.' >';
+                            $content .= '<td align="center"><font size="1">'.$nc.'</font></td>';
+                            $content .= '<td align="center"><font size="1">'.$row[0].'</font></td>';
+                            $content .= '<td><font size="1">'.$row[1].'</font></td>';
+                            $content .= '<td align="center"><font size="1">'.$row[2].'</font></td>';
+                            $content .= '<td align="center"><font size="1">'.$row[3].'</font></td>';
+                            $content .= '<td><font size="1">'.$row[4].'</font></td>';
+                            $content .= '</tr>';
+                        }
+                        $content .= '</table>';
+                    }
+                }
+                $content .= '</br>';
+                $content .= '</br>';
+        
+                $file_php=0;
+                if (isset($data['tr'])==true ){
+                    require ("genera.php");
+                    $sem = $data['idsem'];
+                    ob_start();
+                    individual($data['codigo'], $data['sex'], $data['codper'], 0, $file_php,$sem);
+                    $content .= ob_get_clean();
+                }
+                $content .= '</br>';
+                if(isset($data['tr'])==true)
+                {
+                    $content .= '<br><br><form method="post" action="carga.php?tr=1&sesion='.$data['sex'].'&x='.$data['idsem'].'" name="registro" id="registro" enctype="multipart/form-data">';
+                    $content .= '<table border="0" widtd="100%" >';
+                    $content .= '<tr><td style="color:111351; font-size:15px;"><b>REGISTRO DE HORARIO DE TRABAJO</b></td></tr>';
+                    $content .= '<tr>';
+                    $content .= '<td><input type="hidden" name="variable2" value="registro" />- Descargar <b>Anexo</b> de horario de trabajo<a href="trabajoindividualex/Horario_Docente.xls" target="_blank"><span style="color: red;"><font size="1" face="Arial"><blink> ( Haga clic aquí )</blink></font></span> </td></tr>';
+                    $content .= '</tr>';
+                    $content .= '<tr>';
+                    $content .= '<tr>';
+                    $content .= '<td></td>';
+                    $content .= '</tr>';
+                    $content .= '<td>Seleccionar el archivo <font size="1px">(xls)</font> <input type="file" name="archivo[]" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple onchange="validarArchivo(this)"></td>';
+                    $content .= '<td><input type="submit" value="Subir Archivo" name="registrar" id="registrar"></td>';
+                    $content .= '</tr>';
+                    $content .= '</table>';
+                    $content .= '</form>';
+        
+                    if($data['trabajo_individual_doc']){
+                        $rowdir = fetchrow($data['trabajo_individual_doc'],-1);
+                        $doc=$rowdir[0];
+                        $content .= "- Visualizar Horario de Trabajo ".$semestre.": <a href=trabajoindividualex/".$doc.">Hacer Clic para Ver el Documento</a><br><br><br>";
+                    }
+                }
+        
+                $content .= '<br><br>En la columna <strong>Consolidado</strong> podrá visualizar la nota promedio de la unidad y el resumen de la unidad <br>que incluye: aprobados, desaprobados, retirados y abandonos.';
+        
+                return $content;
+            }
+        
+            private function prepareViewData($sex)
     {
         $data = [];
         $data['sex'] = $sex;
@@ -642,7 +906,7 @@ class CargaController
         $data['semestres'] = $this->model->getSemestres($_SESSION['codper']);
         $data['semestre_info'] = $this->model->getSemestreInfo($data['idsem'], $data['esSemestreTaex']);
         $data['director_depe'] = $this->model->getDirectorIdDepe($_SESSION['codigo']);
-        
+
         $cursos = $this->model->getCursos($_SESSION['codper'], $data['idsem'], $data['esSemestreTaex']);
         $ji=0;
         while ($row =fetchrow($cursos,-1))
@@ -671,6 +935,12 @@ class CargaController
             $data['ultimos_accesos'] = $this->model->getUltimosAccesos($pIdDocenteDatoEvaluacion, $data['idsem']);
         }
 
-        return $data;
+        // Generate menu
+                $data['menu'] = $this->generateMenu($data);
+        
+                // Generate content
+                $data['content'] = $this->generateContent($data);
+        
+                return $data;
     }
 }
