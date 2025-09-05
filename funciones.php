@@ -1679,7 +1679,7 @@ function fncEnvioEmailUpt($email, $correo, $mensaje_correo){
 
 function getAutoridadesAcademicas(){
 	$conn = conex();
-	$sql = "SELECT
+	$sql = "SELECT DISTINCT
 	    CP.CodPer AS [Codigo_Personal],
 	    CP.Nombres AS [Nombres_Docente],
 	    CP.ApellidoPaterno AS [Apellido_Paterno_Docente],
@@ -1690,10 +1690,37 @@ function getAutoridadesAcademicas(){
 	LEFT JOIN
 	    dbo.depe AS D ON CP.IdPtaDependencia = D.iddepe
 	WHERE
-	    (CP.Cargo LIKE '%Decano%'
-	    OR CP.Cargo LIKE '%Director%Escuela%'
-	    OR CP.Cargo LIKE '%Director%Departamento%')
-	    AND CP.Estado = 1
+	    CP.Estado = 1
+	    AND (
+	        -- CATEGORÍA 1: JEFES (JEFE DE ÁREA, JEFE DE OFICINA, JEFE DE PRACTICA)
+	        UPPER(CP.Cargo) LIKE '%JEFE DE AREA%'
+	        OR UPPER(CP.Cargo) LIKE '%JEFE DE OFICINA%'
+	        OR UPPER(CP.Cargo) LIKE '%JEFE DE PRACTICA%'
+
+	        -- CATEGORÍA 2: DECANOS (DECANO, DECANO (E ) FAING)
+	        OR UPPER(CP.Cargo) LIKE '%DECANO%'
+
+	        -- CATEGORÍA 3: DIRECTORES DE ESCUELA / DEPARTAMENTO
+	        OR UPPER(CP.Cargo) LIKE '%DIRECTOR DE ESCUELA%'
+	        OR UPPER(CP.Cargo) LIKE '%DIRECTOR DE DEPARTAMENTO%'
+	        OR UPPER(CP.Cargo) LIKE '%DIRECTOR ICEL%'
+	        OR UPPER(CP.Cargo) LIKE '%DIRECTOR DE ESCUELA DE POSTGRADO%'
+
+	        -- CATEGORÍA 4: COORDINADORES
+	        OR UPPER(CP.Cargo) LIKE '%COORDINADOR DE ESCUELA%'
+
+	        -- CATEGORÍA 5: SECRETARIOS (ACADEMICOS, POST GRADO, GENERAL)
+	        OR UPPER(CP.Cargo) LIKE '%SECRETARIO ACADEMICO%'
+	        OR UPPER(CP.Cargo) LIKE '%SECRETARIO ACADEMICO POST GRADO%'
+	        OR UPPER(CP.Cargo) LIKE '%SECRETARIO GENERAL%'
+
+	        -- CATEGORÍA 6: VICECARGOS (VICERRECTOR ACADEMICO, VICERRECTOR DE INVESTIGACION)
+	        OR UPPER(CP.Cargo) LIKE '%VICERRECTOR ACADEMICO%'
+	        OR UPPER(CP.Cargo) LIKE '%VICERRECTOR DE INVESTIGACION%'
+
+	        -- CATEGORÍA 7: RECTOR
+	        OR UPPER(CP.Cargo) LIKE '%RECTOR%'
+	    )
 	ORDER BY
 	    CP.Cargo, CP.ApellidoPaterno, CP.ApellidoMaterno";
 

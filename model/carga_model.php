@@ -719,22 +719,43 @@ class CargaModel
         require_once 'funciones.php';
         $autoridades = getAutoridadesAcademicas();
 
-        $directores = array();
+        $jefes = array();
         $decanos = array();
+        $directores = array();
+        $coordinadores = array();
+        $secretarios = array();
+        $vicecargos = array();
+        $rector = array();
 
         foreach ($autoridades as $autoridad) {
             $nombre_completo = $autoridad['nombres'] . ' ' . $autoridad['apellido_paterno'] . ' ' . $autoridad['apellido_materno'];
-            if (strpos(strtolower($autoridad['cargo']), 'director') !== false) {
-                $directores[] = $nombre_completo;
-            }
-            if (strpos(strtolower($autoridad['cargo']), 'decano') !== false) {
-                $decanos[] = $nombre_completo;
+            $cargo_lower = strtolower($autoridad['cargo']);
+
+            if (strpos($cargo_lower, 'jefe') !== false) {
+                $jefes[] = $nombre_completo . ' (' . $autoridad['cargo'] . ')';
+            } elseif (strpos($cargo_lower, 'decano') !== false) {
+                $decanos[] = $nombre_completo . ' (' . $autoridad['cargo'] . ')';
+            } elseif (strpos($cargo_lower, 'director') !== false) {
+                $directores[] = $nombre_completo . ' (' . $autoridad['cargo'] . ')';
+            } elseif (strpos($cargo_lower, 'coordinador') !== false) {
+                $coordinadores[] = $nombre_completo . ' (' . $autoridad['cargo'] . ')';
+            } elseif (strpos($cargo_lower, 'secretario') !== false) {
+                $secretarios[] = $nombre_completo . ' (' . $autoridad['cargo'] . ')';
+            } elseif (strpos($cargo_lower, 'vicerrector') !== false) {
+                $vicecargos[] = $nombre_completo . ' (' . $autoridad['cargo'] . ')';
+            } elseif (strpos($cargo_lower, 'rector') !== false) {
+                $rector[] = $nombre_completo . ' (' . $autoridad['cargo'] . ')';
             }
         }
 
         return array(
+            'jefes' => $jefes,
+            'decanos' => $decanos,
             'directores' => $directores,
-            'decanos' => $decanos
+            'coordinadores' => $coordinadores,
+            'secretarios' => $secretarios,
+            'vicecargos' => $vicecargos,
+            'rector' => $rector
         );
     }
 }

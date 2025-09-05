@@ -174,32 +174,44 @@ echo $data['content'];
 
 <!-- Modal para mostrar autoridades -->
 <div id="modalAutoridades" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 10px; width: 600px; max-height: 70%; overflow-y: auto; text-align: center;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 10px; width: 700px; max-height: 80%; overflow-y: auto; text-align: center;">
         <h3>Autoridades Académicas</h3>
         <?php if (isset($data['autoridades'])): ?>
-            <?php if (!empty($data['autoridades']['directores'])): ?>
-                <h4>Directores de Escuela:</h4>
-                <ul style="text-align: left; display: inline-block;">
-                    <?php foreach ($data['autoridades']['directores'] as $director): ?>
-                        <li><?php echo htmlspecialchars($director); ?></li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php else: ?>
-                <p><strong>Directores de Escuela:</strong> No disponibles</p>
-            <?php endif; ?>
+            <?php
+            $categorias = [
+                'rector' => 'Rector',
+                'vicecargos' => 'Vicerectores',
+                'decanos' => 'Decanos',
+                'directores' => 'Directores',
+                'coordinadores' => 'Coordinadores',
+                'secretarios' => 'Secretarios',
+                'jefes' => 'Jefes'
+            ];
+            $hasAutoridades = false;
+            foreach ($categorias as $key => $titulo) {
+                if (!empty($data['autoridades'][$key])) {
+                    $hasAutoridades = true;
+                    break;
+                }
+            }
+            ?>
 
-            <?php if (!empty($data['autoridades']['decanos'])): ?>
-                <h4>Decanos de Escuela:</h4>
-                <ul style="text-align: left; display: inline-block;">
-                    <?php foreach ($data['autoridades']['decanos'] as $decano): ?>
-                        <li><?php echo htmlspecialchars($decano); ?></li>
-                    <?php endforeach; ?>
-                </ul>
+            <?php if ($hasAutoridades): ?>
+                <?php foreach ($categorias as $key => $titulo): ?>
+                    <?php if (!empty($data['autoridades'][$key])): ?>
+                        <h4><?php echo $titulo; ?>:</h4>
+                        <ul style="text-align: left; display: inline-block; margin-bottom: 15px;">
+                            <?php foreach ($data['autoridades'][$key] as $autoridad): ?>
+                                <li><?php echo htmlspecialchars($autoridad); ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             <?php else: ?>
-                <p><strong>Decanos de Escuela:</strong> No disponibles</p>
+                <p>No se encontraron autoridades académicas activas.</p>
             <?php endif; ?>
         <?php else: ?>
-            <p>No se encontraron autoridades académicas.</p>
+            <p>No se pudieron cargar las autoridades académicas.</p>
         <?php endif; ?>
         <br><br>
         <button onclick="cerrarModal()" style="padding: 10px 20px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">Cerrar</button>
