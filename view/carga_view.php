@@ -341,111 +341,198 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /* === Descargar Excel usando WebScraping === */
-    const btnExcelWebScraping = document.getElementById('btnGenerarExcelWebScraping');
-    if (btnExcelWebScraping) {
-        // Helper para encontrar un elemento que contenga un texto específico
-        const findElement = (parent, selector, text) =>
-            Array.from(parent.querySelectorAll(selector)).find(el => el.textContent.trim().includes(text));
+    var btnExcelWebScraping = document.getElementById('btnGenerarExcelWebScraping');
+if (btnExcelWebScraping) {
+    btnExcelWebScraping.addEventListener('click', function(ev) {
+        ev.preventDefault();
 
-        btnExcelWebScraping.addEventListener('click', (ev) => {
-            ev.preventDefault();
+        // Crear un nuevo libro de trabajo
+        var wb = XLSX.utils.book_new();
 
-            const contentsDiv = document.getElementById('contents');
-            if (!contentsDiv) return;
+        // Encontrar el contenedor principal de contenidos
+        var contentsDiv = document.getElementById('contents');
+        if (!contentsDiv) return;
 
-            const tempDiv = document.createElement('div');
+        // Crear un contenedor temporal para el contenido que queremos exportar
+        var tempDiv = document.createElement('div');
 
-            // --- 1. Definir los marcadores de inicio y fin para el scraping ---
-            const startLectiva = findElement(contentsDiv, 'th[colspan="14"]', 'Detalle de Carga Lectiva')?.closest('table');
-            const endLectiva = findElement(contentsDiv, '*', 'Descargar Guía de Usuario');
-            const startNoLectiva = findElement(contentsDiv, 'th[colspan="5"]', 'Detalle de Carga No Lectiva')?.closest('table');
-            const endNoLectiva = findElement(contentsDiv, 'td[colspan="7"]', 'CALIFICACION');
-
-            // --- 2. Realizar el scraping de ambas secciones ---
-            // Scrapea la sección de Carga Lectiva
-            if (startLectiva) {
-                let currentNode = startLectiva;
-                while (currentNode) {
-                    if (endLectiva && currentNode.nodeType === 1 && currentNode.contains(endLectiva)) break;
-                    if (currentNode.nodeType === 1) tempDiv.appendChild(currentNode.cloneNode(true));
-                    currentNode = currentNode.nextSibling;
-                }
+        // --- PRIMER WEBSCRAPING: Carga Lectiva ---
+        var thElementsLectiva = contentsDiv.querySelectorAll('th[colspan="14"]');
+        var startElementLectiva = null;
+        for (var i = 0; i < thElementsLectiva.length; i++) {
+            if (thElementsLectiva[i].textContent.trim() === 'Detalle de Carga Lectiva') {
+                startElementLectiva = thElementsLectiva[i].closest('table');
+                break;
             }
+        }
 
-            // Scrapea la Carga No Lectiva y las tablas siguientes (solo elementos <table>)
-            if (startNoLectiva) {
+        var allElements = contentsDiv.querySelectorAll('*');
+        var endElementLectiva = null;
+        for (var i = 0; i < allElements.length; i++) {
+            if (allElements[i].textContent.trim().includes('Descargar Guía de Usuario')) {
+                endElementLectiva = allElements[i];
+                break;
+            }
+        }
+
+        if (startElementLectiva && endElementLectiva) {
+            var currentNode = startElementLectiva;
+            while (currentNode) {
+                if (currentNode.nodeType === 1 && (currentNode === endElementLectiva || currentNode.contains(endElementLectiva))) {
+                    break;
+                }
+                if (currentNode.nodeType === 1) {
+                    tempDiv.appendChild(currentNode.cloneNode(true));
+                }
+                currentNode = currentNode.nextSibling;
+            }
+        } else {
+            console.log("Marcadores para Carga Lectiva no encontrados.");
+        }
+
+        // --- SEGUNDO WEBSCRAPING: Carga No Lectiva hasta el marcador final ---
+        var thElementsNoLectiva = contentsDiv.querySelectorAll('th[colspan="5"]');
+        var startNodeNoLectiva = null;
+        // AQUÍ ESTABA EL ERROR: 'ika' ha sido corregido a '0'
+        for (var i = 0; i < thElementsNoLectiva.length; i++) {
+            if (thElementsNoLectiva[i].textContent.trim() === 'Detalle de Carga No Lectiva') {
+                startNodeNoLectiva = thElementsNoLectiva[i].closest('table');
+                break;
+            }
+        }
+
+        var tdElements = contentsDiv.querySelectorAll('td[colspan="7"]');
+        var finalEndElement = null;
+        for (var i = 0; i < tdElements.length; i++) {
+            if (tdElements[i].textContent.trim() === 'CALIFICACION') {
+                finalEndElement = tdElements[i];
+                break;
+            }
+        }
+
+        if (startNodeNoLectiva) {
+            if (tempDiv.children.length > 0) {
                 tempDiv.appendChild(document.createElement('br'));
-                let currentNode = startNoLectiva;
-                while (currentNode) {
-                    if (endNoLectiva && currentNode.nodeType === 1 && currentNode.contains(endNoLectiva)) break;
-                    if (currentNode.tagName === 'TABLE') {
-                        tempDiv.appendChild(currentNode.cloneNode(true));
-                        tempDiv.appendChild(document.createElement('br'));
-                    }
-                    currentNode = currentNode.nextSibling;
-                }
+                tempDiv.appendChild(document.createElement('br'));
             }
 
-            // --- 3. EXTRAER EL CAMPO ESPECÍFICO QUE QUIERES (tu bloque de actividad no lectiva) ---
-            // Buscamos el select por su name: vacti_editar1
-            const targetSelect = contentsDiv.querySelector('select[name="vacti_editar1"]');
-            if (targetSelect) {
-                const fontWrapper = targetSelect.closest('font'); // El <font> que contiene todo
-                if (fontWrapper) {
-                    const clonedBlock = fontWrapper.cloneNode(true);
-                    const container = document.createElement('div');
-                    container.innerHTML = '<strong>Actividad No Lectiva Detalle:</strong>';
-                    container.appendChild(clonedBlock);
-                    tempDiv.appendChild(container);
+            var currentNode = startNodeNoLectiva;
+            while (currentNode) {
+                if (finalEndElement && currentNode.nodeType === 1 && currentNode.contains(finalEndElement)) {
+                    console.log("Deteniendo el scraping antes de la tabla que contiene 'CALIFICACION'.");
+                    break;
+                }
+                if (currentNode.nodeType === 1 && currentNode.tagName === 'TABLE') {
+                    tempDiv.appendChild(currentNode.cloneNode(true));
                     tempDiv.appendChild(document.createElement('br'));
                 }
+                currentNode = currentNode.nextSibling;
             }
+        } else {
+            console.log("Tabla inicial de Carga No Lectiva no encontrada.");
+        }
 
-            if (tempDiv.children.length === 0) return;
+        // --- 3. EXTRAER EL CAMPO ESPECÍFICO (bloque de actividad no lectiva) ---
+        const targetSelect = contentsDiv.querySelector('select[name="vacti_editar1"]');
+        if (targetSelect) {
+            const fontWrapper = targetSelect.closest('font');
+            if (fontWrapper) {
+                const clonedBlock = fontWrapper.cloneNode(true);
+                const container = document.createElement('div');
+                container.innerHTML = '<strong>Actividad No Lectiva Detalle:</strong>';
+                container.appendChild(clonedBlock);
+                tempDiv.appendChild(container);
+                tempDiv.appendChild(document.createElement('br'));
+            }
+        }
 
-            // --- 4. Procesar los datos: Reemplazar inputs con su valor en texto ---
-            tempDiv.querySelectorAll('input[type="text"]').forEach(input => {
-                if (input.parentNode) {
-                    const span = document.createElement('span');
-                    span.textContent = input.value || '';
-                    input.parentNode.replaceChild(span, input);
+        // --- 4. Procesar los datos: Reemplazar inputs y selects con su valor en texto ---
+        tempDiv.querySelectorAll('input[type="text"]').forEach(input => {
+            if (input.parentNode) {
+                const span = document.createElement('span');
+                span.textContent = input.value || '';
+                input.parentNode.replaceChild(span, input);
+            }
+        });
+
+        tempDiv.querySelectorAll('select').forEach(select => {
+            const selectedOption = select.querySelector('option[selected]') || select.options[select.selectedIndex];
+            const span = document.createElement('span');
+            span.textContent = selectedOption?.text || '';
+            select.parentNode.replaceChild(span, select);
+        });
+
+        // --- 5. Limpieza de celdas ---
+        tempDiv.querySelectorAll('td, th').forEach(function(cell) {
+            cell.textContent = cell.innerText.trim();
+        });
+
+        // --- 6. PROCESAMIENTO PARA CARGA LECTIVA: Añadir guion ---
+        const tables = tempDiv.querySelectorAll('table');
+        tables.forEach(table => {
+            // Buscamos la fila de encabezado
+            const headerRow = table.querySelector('tr');
+            if (!headerRow) return; // Si la tabla no tiene filas, la ignoramos
+
+            const headers = Array.from(headerRow.querySelectorAll('th, td'));
+            const dayColumns = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+            const targetIndices = [];
+
+            // Obtenemos los índices de las columnas de los días de la semana
+            headers.forEach((header, index) => {
+                if (dayColumns.includes(header.textContent.trim())) {
+                    targetIndices.push(index);
                 }
             });
 
-            // Reemplazar selects con su valor seleccionado
-            tempDiv.querySelectorAll('select').forEach(select => {
-                const selectedOption = select.querySelector('option[selected]') || select.options[select.selectedIndex];
-                const span = document.createElement('span');
-                span.textContent = selectedOption?.text || '';
-                select.parentNode.replaceChild(span, select);
+            // Si encontramos columnas de días, procesamos las filas
+            if (targetIndices.length > 0) {
+                const dataRows = table.querySelectorAll('tr');
+                dataRows.forEach((row, rowIndex) => {
+                    if (rowIndex === 0) return; // Omitimos la fila de encabezado
+
+                    const cells = row.querySelectorAll('td');
+                    targetIndices.forEach(colIndex => {
+                        if (cells[colIndex]) {
+                            const cell = cells[colIndex];
+                            let text = cell.textContent.trim();
+                            // Aplicamos el formato solo si el texto es numérico y tiene la longitud adecuada
+                            if (text.length > 5 && /^\d+$/.test(text)) {
+                                cell.textContent = text.substring(0, 5) + '-' + text.substring(5);
+                            }
+                        }
+                    });
+                });
+            }
+        });
+
+        // --- 7. Convertir a Excel y descargar ---
+        if (tempDiv.children.length > 0) {
+            var tempTable = document.createElement('table');
+            tempTable.appendChild(tempDiv);
+            var ws = XLSX.utils.table_to_sheet(tempTable, {
+                sheet: "Carga Docente"
             });
 
-            // --- 5. Generar y descargar el archivo Excel ---
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.table_to_sheet(tempDiv, { sheet: "Carga Docente" });
-
-            // Aplicar estilos a las celdas
-            for (const address in ws) {
-                if (address[0] === '!') continue;
-                const cellRef = XLSX.utils.decode_cell(address);
-                ws[address].s = {
-                    border: {
-                        top: { style: "thick", color: { rgb: "000000" } },
-                        bottom: { style: "thick", color: { rgb: "000000" } },
-                        left: { style: "thick", color: { rgb: "000000" } },
-                        right: { style: "thick", color: { rgb: "000000" } }
-                    },
-                    fill: {
-                        patternType: "solid",
-                        fgColor: { rgb: cellRef.r === 0 ? "CCCCCC" : "FFFFFF" }
-                    }
+            // Aplicar estilos
+            for (var cell in ws) {
+                if (cell[0] === '!') continue;
+                if (!ws[cell].s) ws[cell].s = {};
+                ws[cell].s.border = {
+                    top: { style: "thin", color: { auto: 1 } },
+                    bottom: { style: "thin", color: { auto: 1 } },
+                    left: { style: "thin", color: { auto: 1 } },
+                    right: { style: "thin", color: { auto: 1 } }
                 };
             }
 
             XLSX.utils.book_append_sheet(wb, ws, "Carga Docente");
-            XLSX.writeFile(wb, `carga_docente_EXCEL_<?php echo $data['idsem']; ?>.xlsx`);
-        });
-    }
+        }
+
+        var filename = 'carga_docente_webscraping_<?php echo $data['idsem']; ?>.xlsx';
+        XLSX.writeFile(wb, filename);
+    });
+}
 });
 
 // Función para mostrar el modal de autoridades
