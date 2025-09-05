@@ -341,190 +341,109 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /* === Descargar Excel usando WebScraping === */
-    var btnExcelWebScraping = document.getElementById('btnGenerarExcelWebScraping');
+    const btnExcelWebScraping = document.getElementById('btnGenerarExcelWebScraping');
     if (btnExcelWebScraping) {
-        btnExcelWebScraping.addEventListener('click', function (ev) {
+        // Helper para encontrar un elemento que contenga un texto específico
+        const findElement = (parent, selector, text) =>
+            Array.from(parent.querySelectorAll(selector)).find(el => el.textContent.trim().includes(text));
+
+        btnExcelWebScraping.addEventListener('click', (ev) => {
             ev.preventDefault();
-            
-            // Crear un nuevo libro de trabajo
-            var wb = XLSX.utils.book_new();
-            
-            // Encontrar el contenedor principal de contenidos
-            var contentsDiv = document.getElementById('contents');
+
+            const contentsDiv = document.getElementById('contents');
             if (!contentsDiv) return;
-            
-            // Crear un contenedor temporal para el contenido que queremos exportar
-            var tempDiv = document.createElement('div');
-            
-            // Encontrar el elemento "Últimos Accesos" y el elemento "REGISTRO DE HORARIO DE TRABAJO"
-            var ultimosAccesos = null;
-            var registroHorario = null;
-            
-            // Buscar "Últimos Accesos" por su encabezado h3
-            var headers = contentsDiv.querySelectorAll('h3');
-            for (var i = 0; i < headers.length; i++) {
-                if (headers[i].textContent.includes('Últimos Accesos')) {
-                    ultimosAccesos = headers[i];
-                    break;
+
+            const tempDiv = document.createElement('div');
+
+            // --- 1. Definir los marcadores de inicio y fin para el scraping ---
+            const startLectiva = findElement(contentsDiv, 'th[colspan="14"]', 'Detalle de Carga Lectiva')?.closest('table');
+            const endLectiva = findElement(contentsDiv, '*', 'Descargar Guía de Usuario');
+            const startNoLectiva = findElement(contentsDiv, 'th[colspan="5"]', 'Detalle de Carga No Lectiva')?.closest('table');
+            const endNoLectiva = findElement(contentsDiv, 'td[colspan="7"]', 'CALIFICACION');
+
+            // --- 2. Realizar el scraping de ambas secciones ---
+            // Scrapea la sección de Carga Lectiva
+            if (startLectiva) {
+                let currentNode = startLectiva;
+                while (currentNode) {
+                    if (endLectiva && currentNode.nodeType === 1 && currentNode.contains(endLectiva)) break;
+                    if (currentNode.nodeType === 1) tempDiv.appendChild(currentNode.cloneNode(true));
+                    currentNode = currentNode.nextSibling;
                 }
             }
-            
-            // Buscar "REGISTRO DE HORARIO DE TRABAJO" por su id
-            registroHorario = contentsDiv.querySelector('#registro');
-            
-            // Si encontramos ambos elementos, extraer el contenido entre los dos <br> especificados
-            if (ultimosAccesos && registroHorario) {
-                // Encontrar el segundo <br> después de ultimosAccesos
-                var startBr = null;
-                var brCount = 0;
-                var currentNode = ultimosAccesos.nextSibling;
+
+            // Scrapea la Carga No Lectiva y las tablas siguientes (solo elementos <table>)
+            if (startNoLectiva) {
+                tempDiv.appendChild(document.createElement('br'));
+                let currentNode = startNoLectiva;
                 while (currentNode) {
-                    if (currentNode.tagName === 'BR') {
-                        brCount++;
-                        if (brCount === 2) {
-                            startBr = currentNode;
-                            break;
-                        }
+                    if (endNoLectiva && currentNode.nodeType === 1 && currentNode.contains(endNoLectiva)) break;
+                    if (currentNode.tagName === 'TABLE') {
+                        tempDiv.appendChild(currentNode.cloneNode(true));
+                        tempDiv.appendChild(document.createElement('br'));
                     }
                     currentNode = currentNode.nextSibling;
                 }
-            
-                // Encontrar el último <br> antes de registroHorario
-                var endBr = null;
-                currentNode = registroHorario.previousSibling;
-                while (currentNode) {
-                    if (currentNode.tagName === 'BR') {
-                        endBr = currentNode;
-                        break;
-                    }
-                    currentNode = currentNode.previousSibling;
-                }
-            
-                // Extraer el contenido entre startBr y endBr
-                if (startBr && endBr) {
-                    currentNode = startBr.nextSibling;
-                    while (currentNode && currentNode !== endBr) {
-                        if (currentNode.nodeType === 1) { // Solo elementos HTML
-                            tempDiv.appendChild(currentNode.cloneNode(true));
-                        }
-                        currentNode = currentNode.nextSibling;
-                    }
-                }
-            } else {
-                // Si no encontramos los marcadores, usar un enfoque alternativo
-                // Extraer las tablas principales de cursos y últimos accesos
-                var tablas = contentsDiv.querySelectorAll('table');
-                for (var i = 0; i < tablas.length; i++) {
-                    var tabla = tablas[i];
-                    // Incluir tablas de cursos (las que tienen encabezados como CodCurso, Seccion, etc.)
-                    var thElements = tabla.querySelectorAll('th');
-                    if (thElements.length > 0) {
-                        var firstTh = thElements[0];
-                        if (firstTh.textContent.includes('sel') || firstTh.textContent.includes('CodCurso')) {
-                            tempDiv.appendChild(tabla.cloneNode(true));
-                            // Agregar un salto después de la tabla de cursos
-                            tempDiv.appendChild(document.createElement('br'));
-                        }
-                        // Incluir tabla de "Últimos Accesos"
-                        else if (firstTh.textContent.includes('Nº') || firstTh.textContent.includes('CodCurso')) {
-                            // Verificar si es la tabla de últimos accesos por su encabezado
-                            var parent = tabla.closest('div');
-                            if (parent && parent.previousElementSibling &&
-                                parent.previousElementSibling.tagName === 'H3' &&
-                                parent.previousElementSibling.textContent.includes('Últimos Accesos')) {
-                                tempDiv.appendChild(tabla.cloneNode(true));
-                            }
-                        }
-                    }
+            }
+
+            // --- 3. EXTRAER EL CAMPO ESPECÍFICO QUE QUIERES (tu bloque de actividad no lectiva) ---
+            // Buscamos el select por su name: vacti_editar1
+            const targetSelect = contentsDiv.querySelector('select[name="vacti_editar1"]');
+            if (targetSelect) {
+                const fontWrapper = targetSelect.closest('font'); // El <font> que contiene todo
+                if (fontWrapper) {
+                    const clonedBlock = fontWrapper.cloneNode(true);
+                    const container = document.createElement('div');
+                    container.innerHTML = '<strong>Actividad No Lectiva Detalle:</strong>';
+                    container.appendChild(clonedBlock);
+                    tempDiv.appendChild(container);
+                    tempDiv.appendChild(document.createElement('br'));
                 }
             }
-            
-            // Convertir el contenido a una hoja de Excel
-            if (tempDiv.children.length > 0) {
-                // Crear una tabla temporal para organizar mejor los datos
-                var tempTable = document.createElement('table');
-                tempTable.appendChild(tempDiv);
-                var ws = XLSX.utils.table_to_sheet(tempTable, {sheet:"Carga Docente"});
-            
-                // Remover filas 5 a 12 (0-based: 4 a 11)
-                var originalRange = XLSX.utils.decode_range(ws['!ref']);
-                var newWs = {};
-                var newRowIndex = 0;
-                // Copiar filas 0-3
-                for (var r = 0; r < 4; r++) {
-                    for (var c = originalRange.s.c; c <= originalRange.e.c; c++) {
-                        var cellAddr = XLSX.utils.encode_cell({r: r, c: c});
-                        if (ws[cellAddr]) {
-                            var newCellAddr = XLSX.utils.encode_cell({r: newRowIndex, c: c});
-                            newWs[newCellAddr] = ws[cellAddr];
-                        }
-                    }
-                    newRowIndex++;
-                }
-                // Saltar filas 4-11
-                // Copiar filas desde 12 en adelante
-                for (var r = 12; r <= originalRange.e.r; r++) {
-                    for (var c = originalRange.s.c; c <= originalRange.e.c; c++) {
-                        var cellAddr = XLSX.utils.encode_cell({r: r, c: c});
-                        if (ws[cellAddr]) {
-                            var newCellAddr = XLSX.utils.encode_cell({r: newRowIndex, c: c});
-                            newWs[newCellAddr] = ws[cellAddr];
-                        }
-                    }
-                    newRowIndex++;
-                }
-                // Actualizar el rango
-                var newRange = {
-                    s: {r: 0, c: originalRange.s.c},
-                    e: {r: newRowIndex - 1, c: originalRange.e.c}
-                };
-                newWs['!ref'] = XLSX.utils.encode_range(newRange);
-                // Reemplazar ws
-                ws = newWs;
-            
-                // Remover las últimas 12 filas antes de generar el Excel
-                var range = XLSX.utils.decode_range(ws['!ref']);
-                var totalRows = range.e.r - range.s.r + 1;
-                if (totalRows > 12) {
-                    var newEndRow = range.e.r - 12;
-                    // Eliminar las celdas de las últimas 12 filas
-                    for (var row = newEndRow + 1; row <= range.e.r; row++) {
-                        for (var col = range.s.c; col <= range.e.c; col++) {
-                            var cellAddress = XLSX.utils.encode_cell({r: row, c: col});
-                            delete ws[cellAddress];
-                        }
-                    }
-                    // Actualizar el rango
-                    range.e.r = newEndRow;
-                    ws['!ref'] = XLSX.utils.encode_range(range);
-                }
 
-                // Aplicar estilos a las celdas
-                for (var cell in ws) {
-                    if (cell[0] === '!') continue;
-                    var cellRef = XLSX.utils.decode_cell(cell);
-                    if (!ws[cell].s) ws[cell].s = {};
-                    // Bordes gruesos
-                    ws[cell].s.border = {
+            if (tempDiv.children.length === 0) return;
+
+            // --- 4. Procesar los datos: Reemplazar inputs con su valor en texto ---
+            tempDiv.querySelectorAll('input[type="text"]').forEach(input => {
+                if (input.parentNode) {
+                    const span = document.createElement('span');
+                    span.textContent = input.value || '';
+                    input.parentNode.replaceChild(span, input);
+                }
+            });
+
+            // Reemplazar selects con su valor seleccionado
+            tempDiv.querySelectorAll('select').forEach(select => {
+                const selectedOption = select.querySelector('option[selected]') || select.options[select.selectedIndex];
+                const span = document.createElement('span');
+                span.textContent = selectedOption?.text || '';
+                select.parentNode.replaceChild(span, select);
+            });
+
+            // --- 5. Generar y descargar el archivo Excel ---
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.table_to_sheet(tempDiv, { sheet: "Carga Docente" });
+
+            // Aplicar estilos a las celdas
+            for (const address in ws) {
+                if (address[0] === '!') continue;
+                const cellRef = XLSX.utils.decode_cell(address);
+                ws[address].s = {
+                    border: {
                         top: { style: "thick", color: { rgb: "000000" } },
                         bottom: { style: "thick", color: { rgb: "000000" } },
                         left: { style: "thick", color: { rgb: "000000" } },
                         right: { style: "thick", color: { rgb: "000000" } }
-                    };
-                    // Color de fondo
-                    if (cellRef.r === 0) {
-                        ws[cell].s.fill = { patternType: "solid", fgColor: { rgb: "CCCCCC" } }; // gris para encabezados
-                    } else {
-                        ws[cell].s.fill = { patternType: "solid", fgColor: { rgb: "FFFFFF" } }; // blanco para datos
+                    },
+                    fill: {
+                        patternType: "solid",
+                        fgColor: { rgb: cellRef.r === 0 ? "CCCCCC" : "FFFFFF" }
                     }
-                }
-
-                XLSX.utils.book_append_sheet(wb, ws, "Carga Docente");
+                };
             }
-            
-            // Generar el archivo Excel y descargarlo
-            var filename = 'carga_docente_webscraping_<?php echo $data['idsem']; ?>.xlsx';
-            XLSX.writeFile(wb, filename);
+
+            XLSX.utils.book_append_sheet(wb, ws, "Carga Docente");
+            XLSX.writeFile(wb, `carga_docente_EXCEL_<?php echo $data['idsem']; ?>.xlsx`);
         });
     }
 });
