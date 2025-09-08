@@ -186,7 +186,7 @@ document.getElementById("excelFile").addEventListener("change", function(e) {
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
 
         // Convertir a texto (matriz JSON)
-        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false });
 
         // Mostrar en HTML
         let html = "<table border='1'>";
