@@ -3495,12 +3495,12 @@ while ($row=fetchrow($result,-1))
 			echo'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font size="1">';
 			if ($estado>0)
 			{
-				echo'<INPUT TYPE="text" class="ftexto" NAME="vcant_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5" value="'.$row[5].'">';
+				echo'<INPUT TYPE="text" class="ftexto" NAME="vcant_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5" value="'.$row[5].'" onkeydown="soloNumeros(event)" oninput="limitar(this,5,99999)">';
 
 			}
 			else
 			{
-				echo'<INPUT TYPE="text" class="ftexto" NAME="vcant_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" readonly="readonly" maxlength="5" value="'.$row[5].'">';
+				echo'<INPUT TYPE="text" class="ftexto" NAME="vcant_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" readonly="readonly" maxlength="5" value="'.$row[5].'" onkeydown="soloNumeros(event)" oninput="limitar(this,5,99999)">';
 			}
 			echo'</font>';
 
@@ -3866,9 +3866,9 @@ if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 &
 				echo '</select></td>';
 				/*termina de generar el combo box de MEDIDA*/
 				/*ESTA CAJA DE TEXTO CAPTURA LA CANTIDAD DE ALUMNOS , DOCENTES o PERMANTE */
-				echo '<td ><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vcant" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5"></font></td>';
+				echo '<td ><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vcant" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5" onkeydown="soloNumeros(event)" oninput="limitar(this,5,99999)"></font></td>';
 				/*ESTA CAJA DE TEXTO CAPTURAS LAS HORAS DESTINADAS A LA MEDIDA */
-				echo '<td >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font size="1"><INPUT TYPE="text" class="ftexto" NAME="vhoras" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2"></font>';
+				echo '<td >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font size="1"><INPUT TYPE="text" class="ftexto" NAME="vhoras" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2" onkeydown="soloNumeros(event)" oninput="limitar(this,2,99)"></font>';
 				/*echo '</td >';*/
 
 				/*echo '<td >';*/
@@ -6135,12 +6135,12 @@ echo '</font>';
 		if ($estado>0)
 		{
 
-			echo '<INPUT TYPE="text" class="ftexto" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2" value="'.$row[6].'">';
+			echo '<INPUT TYPE="text" class="ftexto" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2" value="'.$row[6].'" onkeydown="soloNumeros(event)" oninput="limitar(this,2,99)">';
 
 		}
 		else
 		{
-			echo '<INPUT TYPE="text" class="ftexto" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" readonly="readonly" maxlength="2" value="'.$row[6].'">';
+			echo '<INPUT TYPE="text" class="ftexto" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" readonly="readonly" maxlength="2" value="'.$row[6].'" onkeydown="soloNumeros(event)" oninput="limitar(this,2,99)">';
 		}
 
 		/*CIERRA EL IF QUE  DETERMINAR SI ES EDITABLE O NO Hrs  */
@@ -6534,37 +6534,46 @@ noconex($conn);
 ?>
 <script>
 function soloNumeros(event) {
-   // Permite solo números (0-9) y teclas de control
-   if (event.keyCode < 48 || event.keyCode > 57) {
-       if (event.keyCode < 96 || event.keyCode > 105) {
-           if (event.keyCode != 8 && event.keyCode != 9 && event.keyCode != 37 && event.keyCode != 39 && event.keyCode != 46) {
-               event.preventDefault();
-           }
-       }
-   }
+    // Permite solo números (0-9) y teclas de control
+    if (event.keyCode < 48 || event.keyCode > 57) {
+        if (event.keyCode < 96 || event.keyCode > 105) {
+            if (event.keyCode != 8 && event.keyCode != 9 && event.keyCode != 37 && event.keyCode != 39 && event.keyCode != 46) {
+                event.preventDefault();
+            }
+        }
+    }
+}
+
+function limitar(input, maxLength, maxValue) {
+    if (input.value.length > maxLength) {
+        input.value = input.value.slice(0, maxLength);
+    }
+    if (parseInt(input.value) > maxValue) {
+        input.value = maxValue;
+    }
 }
 
 // Aplica a todos los inputs de horas y cant
 document.addEventListener('DOMContentLoaded', function() {
-   var inputsNumericos = document.querySelectorAll('input[name^="vcant_editar"], input[name^="vhoras_editar"]');
-   inputsNumericos.forEach(function(input) {
-       input.addEventListener('keydown', soloNumeros);
-       input.addEventListener('input', function() {
-           var maxLength = 5; // default for cant
-           var maxValue = 99999; // default for cant
-           if (input.name.startsWith('vhoras_editar')) {
-               maxLength = 2;
-               maxValue = 99;
-           }
-           // Limita la longitud
-           if (this.value.length > maxLength) {
-               this.value = this.value.slice(0, maxLength);
-           }
-           // Limita el rango
-           if (parseInt(this.value) > maxValue) {
-               this.value = maxValue;
-           }
-       });
-   });
+    var inputsNumericos = document.querySelectorAll('input[name^="vcant_editar"], input[name^="vhoras_editar"], input[name="vcant"], input[name="vhoras"]');
+    inputsNumericos.forEach(function(input) {
+        input.addEventListener('keydown', soloNumeros);
+        input.addEventListener('input', function() {
+            var maxLength = 5; // default for cant
+            var maxValue = 99999; // default for cant
+            if (input.name.startsWith('vhoras') || input.name == 'vhoras') {
+                maxLength = 2;
+                maxValue = 99;
+            }
+            // Limita la longitud
+            if (this.value.length > maxLength) {
+                this.value = this.value.slice(0, maxLength);
+            }
+            // Limita el rango
+            if (parseInt(this.value) > maxValue) {
+                this.value = maxValue;
+            }
+        });
+    });
 });
 </script>
