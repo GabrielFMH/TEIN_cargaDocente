@@ -172,6 +172,40 @@ echo $data['content'];
 
 ?>
 
+<script>
+document.getElementById("excelFile").addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+
+        // Leer la primera hoja
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+
+        // Convertir a texto (matriz JSON)
+        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+        // Mostrar en HTML
+        let html = "<table border='1'>";
+        rows.forEach(row => {
+            html += "<tr>";
+            row.forEach(cell => {
+                html += "<td>" + (cell !== undefined ? cell : "") + "</td>";
+            });
+            html += "</tr>";
+        });
+        html += "</table>";
+
+        document.getElementById("output").innerHTML = html;
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+</script>
+
 <!-- Modal para mostrar autoridades -->
 <div id="modalAutoridades" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 10px; width: 700px; max-height: 80%; overflow-y: auto; text-align: center;">

@@ -860,11 +860,12 @@ class CargaController
                     $content .= '<tr>';
                     $content .= '<td></td>';
                     $content .= '</tr>';
-                    $content .= '<td>Seleccionar el archivo <font size="1px">(xls)</font> <input type="file" name="archivo[]" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple onchange="validarArchivo(this)"></td>';
+                    $content .= '<td>Seleccionar el archivo <font size="1px">(xls)</font> <input type="file" id="excelFile" name="archivo[]" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple onchange="validarArchivo(this)"></td>';
                     $content .= '<td><input type="submit" value="Subir Archivo" name="registrar" id="registrar"></td>';
                     $content .= '</tr>';
                     $content .= '</table>';
                     $content .= '</form>';
+                    $content .= '<div id="output"></div>';
         
                     if($data['trabajo_individual_doc']){
                         $rowdir = fetchrow($data['trabajo_individual_doc'],-1);
