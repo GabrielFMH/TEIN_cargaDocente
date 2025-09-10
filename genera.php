@@ -1,4 +1,5 @@
 <?php
+include('genera_formularios_carga.php');
 function huella($codper)
 {
 	$conn=conex();
@@ -3277,7 +3278,130 @@ while ($row=fetchrow($result,-1))
 	$estadox = $row[5];
 	$porcentajex = $row[11];
 
-	/*EN LA CARGA DEL DOCENTE*/
+
+
+
+
+
+
+?>
+<script language="javascript">
+function actualizarTipoActividad<?php echo $da; ?>() {
+    var actividad = document.getElementById("actividad_editar<?php echo $da; ?>").value;
+    var tipoSelect = document.getElementById("tipo_actividad_editar<?php echo $da; ?>");
+    var detalleSelect = document.getElementById("detalle_actividad_editar<?php echo $da; ?>");
+
+    // Limpiar los siguientes selects
+    tipoSelect.innerHTML = "<option value=''>-- Seleccione --</option>";
+    detalleSelect.innerHTML = "<option value=''>-- Seleccione --</option>";
+
+    var opciones = [];
+    if (actividad === "Academica") {
+        opciones = [
+            { value: "Lectiva", text: "Lectiva" },
+            { value: "No_Lectiva", text: "No Lectiva" },
+            { value: "Investigacion", text: "Investigación" },
+            { value: "Responsabilidad_Social", text: "Responsabilidad Social" }
+        ];
+    } else if (actividad === "Administrativa") {
+        opciones = [
+            { value: "Gestion", text: "Gestión" }
+        ];
+    }
+
+    // Limpiar opciones existentes
+    tipoSelect.innerHTML = "";
+    
+    // Agregar opción por defecto
+    var defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.text = "-- Seleccione --";
+    tipoSelect.appendChild(defaultOption);
+
+    opciones.forEach(function(opcion) {
+        var opt = document.createElement("option");
+        opt.value = opcion.value;
+        opt.text = opcion.text;
+        tipoSelect.appendChild(opt);
+    });
+}
+
+function actualizarDetalleActividad<?php echo $da; ?>() {
+    var tipo = document.getElementById("tipo_actividad_editar<?php echo $da; ?>").value;
+    var detalleSelect = document.getElementById("detalle_actividad_editar<?php echo $da; ?>");
+
+    // Limpiar opciones existentes
+    detalleSelect.innerHTML = "";
+    
+    // Agregar opción por defecto
+    var defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.text = "-- Seleccione --";
+    detalleSelect.appendChild(defaultOption);
+
+    var opciones = [];
+
+    switch(tipo) {
+        case "Lectiva":
+            opciones = [{ value: "Preparacion_Clase", text: "Preparación de clase y evaluación" }];
+            break;
+        case "No_Lectiva":
+            opciones = [
+                { value: "Asesoria_Practicas", text: "Asesoramiento prácticas pre profesionales" },
+                { value: "Consejeria", text: "Consejería" },
+                { value: "Tutoria", text: "Tutoría" },
+                { value: "Monitoreo_Seguimiento", text: "Monitoreo y seguimiento" },
+                { value: "Organizacion_Eventos", text: "Organización de eventos" },
+                { value: "Actividades_Academicas", text: "Actividades académicas" },
+                { value: "Actividades_Acreditacion", text: "Actividades de acreditación" }
+            ];
+            break;
+        case "Investigacion":
+            opciones = [
+                { value: "Asesoria_Tesis", text: "Asesoría de tesis" },
+                { value: "Jurados", text: "Jurados" },
+                { value: "Produccion_Intelectual", text: "Producción intelectual" },
+                { value: "Articulos_Investigacion", text: "Artículos investigación" },
+                { value: "Proyectos_Investigacion", text: "Proyectos de investigación" }
+            ];
+            break;
+        case "Responsabilidad_Social":
+            opciones = [
+                { value: "Proyeccion_Social", text: "Proyección social" },
+                { value: "Extension_Universitaria", text: "Extensión universitaria" },
+                { value: "Responsabilidad_Social_Detalle", text: "Responsabilidad social" },
+                { value: "PSSU", text: "PSSU" },
+                { value: "Voluntariado", text: "Voluntariado" },
+                { value: "Seguimiento_Egresados", text: "Seguimiento a egresados en escuelas" },
+                { value: "GPSAlumni", text: "Actividades GPSAlumni" }
+            ];
+            break;
+        case "Gestion":
+            opciones = [
+                { value: "Jefatura_Oficina", text: "Jefatura de oficina" },
+                { value: "Unidad_Administrativa", text: "Jefatura de unidad administrativa" },
+                { value: "Coordinador_Area", text: "Coordinador de área" },
+                { value: "Coordinador_Unidad_Academica", text: "Coordinador de unidad académica" },
+                { value: "Coordinador_Unidad_Investigacion", text: "Coordinador de unidad de investigación" },
+                { value: "Coordinador_GPSAlumni", text: "Coordinador de GPSAlumni" },
+                { value: "Coordinador_RS", text: "Coordinador de Responsabilidad social" },
+                { value: "Comisiones", text: "Comisiones" },
+                { value: "Comite_Mejora", text: "Comité de mejora continua" }
+            ];
+            break;
+    }
+
+    opciones.forEach(function(opcion) {
+        var opt = document.createElement("option");
+        opt.value = opcion.value;
+        opt.text = opcion.text;
+        detalleSelect.appendChild(opt);
+    });
+}
+</script>
+<?php
+
+/*EN LA CARGA DEL DOCENTE*/
 	echo '<table border="1" cellspacing="0" width="100%">';
 		if ($bandera==1){echo '<tr><th colspan="5">Detalle de Carga No Lectiva</th></tr>';}
 
@@ -3303,48 +3427,50 @@ while ($row=fetchrow($result,-1))
 		echo '</tr>';
 		echo '<tr>';
 			echo '<td><font size="1">';
-				echo '<select size="1" name="vacti_editar'.$da.'" title="Seleccionar la magnitud que representa lo establecido como meta">';
-
+				
+				// Primer Combobox - Actividad
+				echo '<select size="1" id="actividad_editar'.$da.'" name="vacti_editar'.$da.'" title="Seleccionar la actividad" onchange="actualizarTipoActividad'.$da.'()">';
+				echo '<option value="">-- Seleccione --</option>';
 				?>
-					<option <?php if($row[1] == "Academica") { echo "selected"; } ?> value="Academica">Academica</option>
+					<option <?php if($row[1] == "Academica") { echo "selected"; } ?> value="Academica">Académica</option>
 					<option <?php if($row[1] == "Administrativa") { echo "selected"; } ?> value="Administrativa">Administrativa</option>
 				<?
-
-				echo "</select>";
-				echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Calificacion: ";
-
-				echo '<select size="1" name="vcalif_editar'.$da.'" title="Seleccionar el item relacionado con la actividad">';
-
-				?>
-
-				<option <?php if($row[7] == 1 ) { echo "selected"; } ?> value="1">Preparación de Clase</option>
-				<option <?php if($row[7] == 2 ) { echo "selected"; } ?> value="2">Asesoramiento</option>
-				<option <?php if($row[7] == 3 ) { echo "selected"; } ?> value="3">Comité Electoral</option>
-				<option <?php if($row[7] == 4 ) { echo "selected"; } ?> value="4">Preparación, desarrollo y evaluación de clases teóricas y prácticas</option>
-				<option <?php if($row[7] == 5 ) { echo "selected"; } ?> value="5">Investigación</option>
-				<option <?php if($row[7] == 6 ) { echo "selected"; } ?> value="6" disabled>Bienestar Universitario</option>
-				<option <?php if($row[7] == 7 ) { echo "selected"; } ?> value="7" disabled>Administración</option>
-				<option <?php if($row[7] == 8 ) { echo "selected"; } ?> value="8">Gestión Administrativa</option>
-				<option <?php if($row[7] == 9 ) { echo "selected"; } ?> value="9">Responsabilidad Social</option>
-				<option <?php if($row[7] == 10 ) { echo "selected"; } ?> value="10">Orientación de Matrícula</option>
-				<option <?php if($row[7] == 11 ) { echo "selected"; } ?> value="11">Participación en Jurados</option>
-				<option <?php if($row[7] == 12 ) { echo "selected"; } ?> value="12">Asesoramiento de Prácticas Pre-profesionales</option>
-				<option <?php if($row[7] == 13 ) { echo "selected"; } ?> value="13">Asesoramiento de Tesis</option>
-				<option <?php if($row[7] == 14 ) { echo "selected"; } ?> value="14">Comisiones</option>
-				<option <?php if($row[7] == 15 ) { echo "selected"; } ?> value="15">Seguimiento de Egresados</option>
-				<option <?php if($row[7] == 16 ) { echo "selected"; } ?> value="16">Consejería</option>
-				<option <?php if($row[7] == 17 ) { echo "selected"; } ?> value="17">Tutoría</option>
-				<option <?php if($row[7] == 18 ) { echo "selected"; } ?> value="18">Seminarios</option>
-				<option <?php if($row[7] == 19 ) { echo "selected"; } ?> value="19">Producción Intelectual</option>
-				<option <?php if($row[7] == 20 ) { echo "selected"; } ?> value="20">Proyección Social</option>
-				<option <?php if($row[7] == 21 ) { echo "selected"; } ?> value="21">Extensión Universitaria</option>
-				<option <?php if($row[7] == 22 ) { echo "selected"; } ?> value="22">Gestión de Gobierno Universitario</option>
-				<option <?php if($row[7] == 23 ) { echo "selected"; } ?> value="23">Jefatura de Oficina o Unidades Administrativas</option>
-				<option <?php if($row[7] == 24 ) { echo "selected"; } ?> value="24">Producción de Bienes o Prestación de Servicios</option>
-
-				<?
-
 				echo '</select>';
+				
+				// Segundo Combobox - Tipo de Actividad
+				echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tipo de Actividad: ";
+				echo '<select size="1" id="tipo_actividad_editar'.$da.'" name="vtipo_editar'.$da.'" title="Seleccionar el tipo de actividad" onchange="actualizarDetalleActividad'.$da.'()">';
+				echo '<option value="">-- Seleccione --</option>';
+				
+				// Opciones basadas en la actividad seleccionada
+				if($row[1] == "Academica") {
+					$tipos = array(
+						"Lectiva" => "Lectiva",
+						"No_Lectiva" => "No Lectiva", 
+						"Investigacion" => "Investigación",
+						"Responsabilidad_Social" => "Responsabilidad Social"
+					);
+				} elseif($row[1] == "Administrativa") {
+					$tipos = array("Gestion" => "Gestión");
+				} else {
+					$tipos = array();
+				}
+				
+				foreach($tipos as $valor => $texto) {
+					$selected = ($row[15] == $valor) ? "selected" : ""; // Asumiendo que $row[15] contiene el tipo
+					echo '<option value="'.$valor.'" '.$selected.'>'.$texto.'</option>';
+				}
+				echo '</select>';
+				
+				// Tercer Combobox - Detalle de Actividad
+				echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Detalle: ";
+				echo '<select size="1" id="detalle_actividad_editar'.$da.'" name="vdetalle_editar'.$da.'" title="Seleccionar el detalle de actividad">';
+				echo '<option value="">-- Seleccione --</option>';
+				
+				// Aquí irían las opciones basadas en el tipo seleccionado
+				// Por ahora lo dejo vacío, puedes agregar la lógica según tus necesidades
+				
+				
 
 				date_default_timezone_set('America/Lima');
 				$dia11=date("d/m/Y");
@@ -3426,6 +3552,9 @@ while ($row=fetchrow($result,-1))
 			echo'</font></td>';
 		echo '</tr>';
 
+	
+	
+
 	//Validacion Plani --Yoel 23-10-18
 	if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
 	{
@@ -3495,12 +3624,12 @@ while ($row=fetchrow($result,-1))
 			echo'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font size="1">';
 			if ($estado>0)
 			{
-				echo'<INPUT TYPE="text" class="ftexto" NAME="vcant_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5" value="'.$row[5].'" onkeydown="soloNumeros(event)" oninput="limitar(this,5,99999)">';
+				echo'<INPUT TYPE="text" class="ftexto" NAME="vcant_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5" value="'.$row[5].'">';
 
 			}
 			else
 			{
-				echo'<INPUT TYPE="text" class="ftexto" NAME="vcant_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" readonly="readonly" maxlength="5" value="'.$row[5].'" onkeydown="soloNumeros(event)" oninput="limitar(this,5,99999)">';
+				echo'<INPUT TYPE="text" class="ftexto" NAME="vcant_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" readonly="readonly" maxlength="5" value="'.$row[5].'">';
 			}
 			echo'</font>';
 
@@ -3744,49 +3873,150 @@ cierra($result_detalle_trab);
 if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
 {
 
+		?>
+<script language="javascript">
+function actualizarTipoActividad() {
+    var actividad = document.getElementById("actividad").value;
+    var tipoSelect = document.getElementById("tipo_actividad");
+    var detalleSelect = document.getElementById("detalle_actividad");
+
+    // Limpiar los siguientes selects
+    tipoSelect.innerHTML = "<option value=''>-- Seleccione --</option>";
+    detalleSelect.innerHTML = "<option value=''>-- Seleccione --</option>";
+
+    var opciones = [];
+    if (actividad === "Academica") {
+        opciones = [
+            { value: "Lectiva", text: "Lectiva" },
+            { value: "No_Lectiva", text: "No Lectiva" },
+            { value: "Investigacion", text: "Investigación" },
+            { value: "Responsabilidad_Social", text: "Responsabilidad Social" }
+        ];
+    } else if (actividad === "Administrativa") {
+        opciones = [
+            { value: "Gestion", text: "Gestión" }
+        ];
+    }
+
+    // Limpiar opciones existentes
+    tipoSelect.innerHTML = "";
+    
+    // Agregar opción por defecto
+    var defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.text = "-- Seleccione --";
+    tipoSelect.appendChild(defaultOption);
+
+    opciones.forEach(function(opcion) {
+        var opt = document.createElement("option");
+        opt.value = opcion.value;
+        opt.text = opcion.text;
+        tipoSelect.appendChild(opt);
+    });
+}
+
+function actualizarDetalleActividad() {
+    var tipo = document.getElementById("tipo_actividad").value;
+    var detalleSelect = document.getElementById("detalle_actividad");
+
+    // Limpiar opciones existentes
+    detalleSelect.innerHTML = "";
+    
+    // Agregar opción por defecto
+    var defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.text = "-- Seleccione --";
+    detalleSelect.appendChild(defaultOption);
+
+    var opciones = [];
+
+    switch(tipo) {
+        case "Lectiva":
+            opciones = [{ value: "Preparacion_Clase", text: "Preparación de clase y evaluación" }];
+            break;
+        case "No_Lectiva":
+            opciones = [
+                { value: "Asesoria_Practicas", text: "Asesoramiento prácticas pre profesionales" },
+                { value: "Consejeria", text: "Consejería" },
+                { value: "Tutoria", text: "Tutoría" },
+                { value: "Monitoreo_Seguimiento", text: "Monitoreo y seguimiento" },
+                { value: "Organizacion_Eventos", text: "Organización de eventos" },
+                { value: "Actividades_Academicas", text: "Actividades académicas" },
+                { value: "Actividades_Acreditacion", text: "Actividades de acreditación" }
+            ];
+            break;
+        case "Investigacion":
+            opciones = [
+                { value: "Asesoria_Tesis", text: "Asesoría de tesis" },
+                { value: "Jurados", text: "Jurados" },
+                { value: "Produccion_Intelectual", text: "Producción intelectual" },
+                { value: "Articulos_Investigacion", text: "Artículos investigación" },
+                { value: "Proyectos_Investigacion", text: "Proyectos de investigación" }
+            ];
+            break;
+        case "Responsabilidad_Social":
+            opciones = [
+                { value: "Proyeccion_Social", text: "Proyección social" },
+                { value: "Extension_Universitaria", text: "Extensión universitaria" },
+                { value: "Responsabilidad_Social_Detalle", text: "Responsabilidad social" },
+                { value: "PSSU", text: "PSSU" },
+                { value: "Voluntariado", text: "Voluntariado" },
+                { value: "Seguimiento_Egresados", text: "Seguimiento a egresados en escuelas" },
+                { value: "GPSAlumni", text: "Actividades GPSAlumni" }
+            ];
+            break;
+        case "Gestion":
+            opciones = [
+                { value: "Jefatura_Oficina", text: "Jefatura de oficina" },
+                { value: "Unidad_Administrativa", text: "Jefatura de unidad administrativa" },
+                { value: "Coordinador_Area", text: "Coordinador de área" },
+                { value: "Coordinador_Unidad_Academica", text: "Coordinador de unidad académica" },
+                { value: "Coordinador_Unidad_Investigacion", text: "Coordinador de unidad de investigación" },
+                { value: "Coordinador_GPSAlumni", text: "Coordinador de GPSAlumni" },
+                { value: "Coordinador_RS", text: "Coordinador de Responsabilidad social" },
+                { value: "Comisiones", text: "Comisiones" },
+                { value: "Comite_Mejora", text: "Comité de mejora continua" }
+            ];
+            break;
+    }
+
+    opciones.forEach(function(opcion) {
+        var opt = document.createElement("option");
+        opt.value = opcion.value;
+        opt.text = opcion.text;
+        detalleSelect.appendChild(opt);
+    });
+}
+</script>
+<?php
+
 		echo '<table border="0" cellspacing="2" bgcolor="#CCE6FF">';
 				echo '<tr>';
 			echo '<td width="120" colspan="2"><font size="1">Actividad</font></td>';
 			echo '</tr>';
 			echo '<tr>';
 			echo '<td width="120" colspan="2">';
-			/*genera el combobox para las ACTIVIDADES*/
-			echo '<select size="1" name="vacti">';
-			$sql="select descrip from trabact";
-			$resulta=luis($conn, $sql);
-			while ($row=fetchrow($resulta,-1))
-			{
-				echo '<option value="'.$row[0].'">'.$row[0].'</option>';
-			}
-			cierra($resulta);
+			
+			// Primer Combobox - Actividad
+			echo '<select size="1" id="actividad" name="vacti" onchange="actualizarTipoActividad()">';
+			echo '<option value="">-- Seleccione --</option>';
+			echo '<option value="Academica">Académica</option>';
+			echo '<option value="Administrativa">Administrativa</option>';
 			echo '</select>';
-			echo "&nbsp;&nbsp;&nbsp;";
-			echo '<select size="1" name="vcalif" title="Seleccionar el item relacionado con la actividad">';
-			echo '<option value="1">Preparacion de Clase</option>';
-			echo '<option value="2">Asesoramiento</option>';
-			echo '<option value="3">Comité Electoral</option>';
-			echo '<option value="4">Preparación, desarrollo y evaluación de clases teóricas y prácticas</option>';
-			echo '<option value="5">Investigacion</option>';
-			echo '<option value="6">Bienestar Universitario</option>';
-			echo '<option value="7">Administración</option>';
-			echo '<option value="8">Gestion Administrativa</option>';
-			echo '<option value="9">Responsabilidad Social</option>';
-			echo '<option value="10">Orientación de Matrícula</option>';
-			echo '<option value="11">Participación en Jurados</option>';
-			echo '<option value="12">Asesoramiento de Prácticas Pre-profesionales</option>';
-			echo '<option value="13">Asesoramiento de Tesis</option>';
-			echo '<option value="14">Comisiones</option>';
-			echo '<option value="15">Seguimiento de Egresados</option>';
-			echo '<option value="16">Consejería</option>';
-			echo '<option value="17">Tutoría</option>';
-			echo '<option value="18">Seminarios</option>';
-			echo '<option value="19">Producción Intelectual</option>';
-			echo '<option value="20">Proyección Social</option>';
-			echo '<option value="21">Extensión Universitaria</option>';
-			echo '<option value="22">Gestión de Gobierno Universitario</option>';
-			echo '<option value="23">Jefatura de Oficina o Unidades Administrativas</option>';
-			echo '<option value="24">Producción de Bienes o Prestación de Servicios</option>';
+			
+			// Segundo Combobox - Tipo de Actividad
+			echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tipo de Actividad: ";
+			echo '<select size="1" id="tipo_actividad" name="vtipo" onchange="actualizarDetalleActividad()">';
+			echo '<option value="">-- Seleccione --</option>';
 			echo '</select>';
+			
+			// Tercer Combobox - Detalle de Actividad
+			echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Detalle: ";
+			echo '<select size="1" id="detalle_actividad" name="vdetalle">';
+			echo '<option value="">-- Seleccione --</option>';
+			echo '</select>';
+			
+			
 			echo '</td>';
 
 			date_default_timezone_set('America/Lima');
@@ -3866,9 +4096,9 @@ if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 &
 				echo '</select></td>';
 				/*termina de generar el combo box de MEDIDA*/
 				/*ESTA CAJA DE TEXTO CAPTURA LA CANTIDAD DE ALUMNOS , DOCENTES o PERMANTE */
-				echo '<td ><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vcant" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5" onkeydown="soloNumeros(event)" oninput="limitar(this,5,99999)"></font></td>';
+				echo '<td ><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vcant" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5"></font></td>';
 				/*ESTA CAJA DE TEXTO CAPTURAS LAS HORAS DESTINADAS A LA MEDIDA */
-				echo '<td >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font size="1"><INPUT TYPE="text" class="ftexto" NAME="vhoras" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2" onkeydown="soloNumeros(event)" oninput="limitar(this,2,99)"></font>';
+				echo '<td >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font size="1"><INPUT TYPE="text" class="ftexto" NAME="vhoras" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2"></font>';
 				/*echo '</td >';*/
 
 				/*echo '<td >';*/
@@ -6135,12 +6365,12 @@ echo '</font>';
 		if ($estado>0)
 		{
 
-			echo '<INPUT TYPE="text" class="ftexto" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2" value="'.$row[6].'" onkeydown="soloNumeros(event)" oninput="limitar(this,2,99)">';
+			echo '<INPUT TYPE="text" class="ftexto" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2" value="'.$row[6].'">';
 
 		}
 		else
 		{
-			echo '<INPUT TYPE="text" class="ftexto" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" readonly="readonly" maxlength="2" value="'.$row[6].'" onkeydown="soloNumeros(event)" oninput="limitar(this,2,99)">';
+			echo '<INPUT TYPE="text" class="ftexto" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" readonly="readonly" maxlength="2" value="'.$row[6].'">';
 		}
 
 		/*CIERRA EL IF QUE  DETERMINAR SI ES EDITABLE O NO Hrs  */
@@ -6527,53 +6757,8 @@ echo '<table border="0" cellspacing="2" bgcolor="#CCE6FF">';
 echo '</table>';
 echo '</form>';
 }
-}
+	}
 noconex($conn);
 }
 /* hasta aqui la funcion individualPIT*/
 ?>
-<script>
-function soloNumeros(event) {
-    // Permite solo números (0-9) y teclas de control
-    if (event.keyCode < 48 || event.keyCode > 57) {
-        if (event.keyCode < 96 || event.keyCode > 105) {
-            if (event.keyCode != 8 && event.keyCode != 9 && event.keyCode != 37 && event.keyCode != 39 && event.keyCode != 46) {
-                event.preventDefault();
-            }
-        }
-    }
-}
-
-function limitar(input, maxLength, maxValue) {
-    if (input.value.length > maxLength) {
-        input.value = input.value.slice(0, maxLength);
-    }
-    if (parseInt(input.value) > maxValue) {
-        input.value = maxValue;
-    }
-}
-
-// Aplica a todos los inputs de horas y cant
-document.addEventListener('DOMContentLoaded', function() {
-    var inputsNumericos = document.querySelectorAll('input[name^="vcant_editar"], input[name^="vhoras_editar"], input[name="vcant"], input[name="vhoras"]');
-    inputsNumericos.forEach(function(input) {
-        input.addEventListener('keydown', soloNumeros);
-        input.addEventListener('input', function() {
-            var maxLength = 5; // default for cant
-            var maxValue = 99999; // default for cant
-            if (input.name.startsWith('vhoras') || input.name == 'vhoras') {
-                maxLength = 2;
-                maxValue = 99;
-            }
-            // Limita la longitud
-            if (this.value.length > maxLength) {
-                this.value = this.value.slice(0, maxLength);
-            }
-            // Limita el rango
-            if (parseInt(this.value) > maxValue) {
-                this.value = maxValue;
-            }
-        });
-    });
-});
-</script>
