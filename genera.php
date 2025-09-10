@@ -3400,10 +3400,34 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 }
 </script>
 <?php
-
 /*EN LA CARGA DEL DOCENTE*/
+
+	// Array con las opciones para el nuevo combobox
+	$dependencias = [
+		"AC : Área de Contabilidad", "AGPH : Área de Gestión del Potencial Humano", "AIR : Área de Impresiones y Reproducciones",
+		"AIM : Área de Infraestructura y Mantenimiento", "AL : Área de Logística", "AS : Área de Servicios", "AT : Area de Tesorería",
+		"CP : Carrera de Psicología", "DFECH : Decanato de la Fac. de Educación, Cs. Comunic. y Hum.", "DFAU : Decanato de la Facultad de Arquitectura y Urbanismo",
+		"DFCS : Decanato de la Facultad de Cs. De la Salud", "DFCE : Decanato de la Facultad de Cs. Empresariales", "DFDP : Decanato de la Facultad de Derecho y Cs. Políticas",
+		"DFI : Decanato de la Facultad de Ingeniería", "DGA : Direccion General de Administración", "EP-D : Escuela de Postgrado - Dirección",
+		"EPA : Escuela Profesional de Administración", "EPANI : Escuela Profesional de Administración de Negocios Internacionales",
+		"EPATH : Escuela Profesional de Administración Turístico-Hotelera", "EPAQ : Escuela Profesional de Arquitectura", "EPCF : Escuela Profesional de Ciencias Contables y Financieras",
+		"ECC : Escuela Profesional de Ciencias de la Comunicación", "EPD : Escuela Profesional de Derecho", "EPE : Escuela Profesional de Economía",
+		"EPEM : Escuela Profesional de Economía y Microfinanzas", "EPED : Escuela Profesional de Educación", "EPIA : Escuela Profesional de Ingeniería Agroindustrial",
+		"EPIAM : Escuela Profesional de Ingeniería Ambiental", "EPIC : Escuela Profesional de Ingeniería Civil", "EPICM : Escuela Profesional de Ingeniería Comercial",
+		"EPIS : Escuela Profesional de Ingeniería de Sistemas", "EPIE : Escuela Profesional de Ingeniería Electrónica", "EPII : Escuela Profesional de Ingeniería Industrial",
+		"EPMH : Escuela Profesional de Medicina Humana", "EPO : Escuela Profesional de Odontología", "EPTM : Escuela Profesional de Tecnología Médica",
+		"IEVV : Institución Educativa Verdad y Vida", "LCAP : Laboratorio Clínico y Anatomía Patológica", "OAM : Oficina de Admisión y Marketing",
+		"OAJL : Oficina de Asesoría Jurídica y Legal", "OBSA : Oficina de Biblioteca y Servicios Académicos", "OBUN : Oficina de Bienestar Universitario",
+		"OCI : Oficina de Control Interno", "ODU : Oficina de Defensoria Universitaria", "OEV : Oficina de Educación Virtual", "OGC : Oficina de Gestión de la Calidad",
+		"OGPAD : Oficina de Gestión de Procesos Académicos y Docencia", "OII : Oficina de Imagen Institucional", "OPD : Oficina de Planeamiento y Desarrollo",
+		"OPITT : Oficina de Procesos de Investigación y Transferencia Tecnológica", "ORNI : Oficina de Relaciones Nacionales e Internacionales",
+		"ORSU : Oficina de Responsabilidad Social Universitaria", "OTI : Oficina de Tecnologías de la Información", "RUPT : Radio UPT",
+		"R : Rectorado", "SG : Secretaría General", "TFYR : Terapia Física y Rehabilitación", "VRA : Vice Rectorado Académico",
+		"VRI : Vice Rectorado de Investigación"
+	];
+
 	echo '<table border="1" cellspacing="0" width="100%">';
-		if ($bandera==1){echo '<tr><th colspan="5">Detalle de Carga No Lectiva</th></tr>';}
+		if ($bandera==1){echo '<tr><th colspan="1">Detalle de Carga No Lectiva</th></tr>';}
 
 			/*Nuevo Cambio para que actualicen la calificación 19-10-2018 Yoel*/
 			if ($row[7] == 6) { $NombreCalifActividad = 'Bienestar Universitario'; } elseif ($row[7] == 7) { $NombreCalifActividad = 'Administración'; }
@@ -3413,23 +3437,21 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 				<?}
 			/*Hasta aqui 19-10-2018 Yoel*/
 
-
 		echo '<tr>';
-			if($estado>0)
-			{
+			if($estado>0) {
 				$editable=' - el contenido de la actividad puede ser editado';
-			}
-			else{
+			} else {
 				$editable=' - <span style="color: red;"><strong>el contenido de la actividad no puede ser editado</strong></span>';
 			}
-
-			echo '<td width="" colspan="1" bgcolor="'.$tcol.'"><font size="1">Actividad '.$da.' '.$editable.'</font></td>';
+			echo '<td colspan="1" bgcolor="'.$tcol.'"><font size="1">Actividad '.$da.' '.$editable.'</font></td>';
 		echo '</tr>';
+		
+		// Fila 1: Comboboxes de Actividad, Tipo, Detalle y Dependencia
 		echo '<tr>';
 			echo '<td><font size="1">';
-				
-				// Primer Combobox - Actividad
-				echo '<select size="1" id="actividad_editar'.$da.'" name="vacti_editar'.$da.'" title="Seleccionar la actividad" onchange="actualizarTipoActividad'.$da.'()">';
+				// Actividad
+				echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Actividad:</font>';
+				echo ' <select size="1" id="actividad_editar'.$da.'" name="vacti_editar'.$da.'" title="Seleccionar la actividad" onchange="actualizarTipoActividad'.$da.'()">';
 				echo '<option value="">-- Seleccione --</option>';
 				?>
 					<option <?php if($row[1] == "Academica") { echo "selected"; } ?> value="Academica">Académica</option>
@@ -3437,83 +3459,74 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 				<?
 				echo '</select>';
 				
-				// Segundo Combobox - Tipo de Actividad
-				echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tipo de Actividad: ";
-				echo '<select size="1" id="tipo_actividad_editar'.$da.'" name="vtipo_editar'.$da.'" title="Seleccionar el tipo de actividad" onchange="actualizarDetalleActividad'.$da.'()">';
+				// Tipo de Actividad
+				echo '&nbsp;&nbsp;&nbsp;<font style="background-color: #F2F8FC" face="Verdana" size="1">Tipo de Actividad:</font>';
+				echo ' <select size="1" id="tipo_actividad_editar'.$da.'" name="vtipo_editar'.$da.'" title="Seleccionar el tipo de actividad" onchange="actualizarDetalleActividad'.$da.'()">';
 				echo '<option value="">-- Seleccione --</option>';
-				
-				// Opciones basadas en la actividad seleccionada
 				if($row[1] == "Academica") {
-					$tipos = array(
-						"Lectiva" => "Lectiva",
-						"No_Lectiva" => "No Lectiva", 
-						"Investigacion" => "Investigación",
-						"Responsabilidad_Social" => "Responsabilidad Social"
-					);
+					$tipos = ["Lectiva" => "Lectiva", "No_Lectiva" => "No Lectiva", "Investigacion" => "Investigación", "Responsabilidad_Social" => "Responsabilidad Social"];
 				} elseif($row[1] == "Administrativa") {
-					$tipos = array("Gestion" => "Gestión");
-				} else {
-					$tipos = array();
-				}
-				
+					$tipos = ["Gestion" => "Gestión"];
+				} else { $tipos = []; }
 				foreach($tipos as $valor => $texto) {
-					$selected = ($row[15] == $valor) ? "selected" : ""; // Asumiendo que $row[15] contiene el tipo
+					$selected = ($row[15] == $valor) ? "selected" : "";
 					echo '<option value="'.$valor.'" '.$selected.'>'.$texto.'</option>';
 				}
 				echo '</select>';
 				
-				// Tercer Combobox - Detalle de Actividad
-				echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Detalle: ";
-				echo '<select size="1" id="detalle_actividad_editar'.$da.'" name="vdetalle_editar'.$da.'" title="Seleccionar el detalle de actividad">';
+				// Detalle de Actividad
+				echo '&nbsp;&nbsp;&nbsp;<font style="background-color: #F2F8FC" face="Verdana" size="1">Detalle:</font>';
+				echo ' <select size="1" id="detalle_actividad_editar'.$da.'" name="vdetalle_editar'.$da.'" title="Seleccionar el detalle de actividad">';
 				echo '<option value="">-- Seleccione --</option>';
+				echo '</select>';
 				
-				// Aquí irían las opciones basadas en el tipo seleccionado
-				// Por ahora lo dejo vacío, puedes agregar la lógica según tus necesidades
-				
-				
+				// Dependencia
+				echo '&nbsp;&nbsp;&nbsp;<font style="background-color: #F2F8FC" face="Verdana" size="1">Dependencia:</font>';
+				echo ' <select size="1" name="vdependencia_editar'.$da.'">';
+				echo '<option value="">-- Seleccione --</option>';
+				foreach ($dependencias as $dependencia) {
+					echo '<option value="' . htmlspecialchars($dependencia) . '">' . htmlspecialchars($dependencia) . '</option>';
+				}
+				echo '</select>';
+			echo '</font></td>';
+		echo '</tr>';
 
+		// Fila 2: Fechas y Porcentaje de avance
+		echo '<tr>';
+			echo '<td><font size="1">';
 				date_default_timezone_set('America/Lima');
-				$dia11=date("d/m/Y");
-				$dia22=$dia11;
-				if (isset($_POST["dateboxx".$da])==true){
-					$dia11=$_POST["dateboxx".$da];
-				}
-				if (isset($_POST["dateboxx2".$da])==true){
-					$dia22=$_POST["dateboxx2".$da];
-				}
-
-				echo'&nbsp;&nbsp; &nbsp; &nbsp; <font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
 				$datebox="dateboxx".$da;
 				$datebox2="dateboxx2".$da;
 
+				// Fecha Inicio
+				echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
 			?>
 				<input name="<? echo $datebox ?>" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(<? echo $datebox ?>,'dd/mm/yyyy',this)" type="text" value=<? echo $row[9] ?> >
 			<?
-
 				echo '&nbsp;&nbsp;&nbsp;';
+				
+				// Fecha Final
 				echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Final:</font>';
 			?>
 				<input name=<? echo $datebox2 ?> readonly="true" autocomplete="off" size="10" onClick="displayCalendar(<? echo $datebox2 ?>,'dd/mm/yyyy',this)" type="text" value=<? echo $row[10] ?> >
 			<?
-
-				echo '&nbsp;&nbsp;&nbsp;<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance</font>&nbsp;&nbsp;&nbsp;';
-				echo'<INPUT TYPE="text" class="ftexto" NAME="vporcentaje_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" readonly="readonly" maxlength="2" value="'.$row[11].'">';
-				echo '</td>';
+				echo '&nbsp;&nbsp;&nbsp;';
+				
+				// Porcentaje de avance
+				echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance:</font>';
+				echo' <INPUT TYPE="text" class="ftexto" NAME="vporcentaje_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" readonly="readonly" maxlength="2" value="'.$row[11].'">';
+			echo '</font></td>';
 		echo '</tr>';
 
 		echo'<tr>';
-			echo '<td bgcolor="'.$tcol.'"><font size="1">Detalle Actividad</font><td>';
+			echo '<td bgcolor="'.$tcol.'"><font size="1">Detalle Actividad</font></td>';
 		echo'</tr>';
-
 		echo'<tr>';
 			echo '<td><font size="1">';
-			if ($estado>0)
-			{
-				echo'<INPUT TYPE="text" class="ftexto" NAME="vdacti_editar'.$da.'" title="Escribir la actividad que realizara" size="160" maxlength="107" value="'.$row[2].'">';
-			}
-			else
-			{
-				echo'<INPUT TYPE="text" class="ftexto" NAME="vdacti_editar'.$da.'" title="Escribir la actividad que realizara" size="160" readonly="readonly" maxlength="107" value="'.$row[2].'">';
+			if ($estado>0) {
+				echo'<INPUT TYPE="text" class="ftexto" NAME="vdacti_editar'.$da.'" title="Escribir la actividad que realizara" style="width: 98%;" maxlength="107" value="'.$row[2].'">';
+			} else {
+				echo'<INPUT TYPE="text" class="ftexto" NAME="vdacti_editar'.$da.'" title="Escribir la actividad que realizara" style="width: 98%;" readonly="readonly" maxlength="107" value="'.$row[2].'">';
 			}
 			echo '</font></td>';
 		echo '</tr>';
@@ -3521,38 +3534,29 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 		echo '<tr>';
 			echo '<td bgcolor="'.$tcol.'"><font size="1">Importancia</font></td>';
 		echo '</tr>';
-
 		echo '<tr>';
-			echo '<td colspan="1" width=""><font size="1">';
-				if ($estado>0)
-				{
-					echo'<INPUT TYPE="text" class="ftexto" NAME="vimporta_editar'.$da.'" title="Escribir la importancia de la actividad" size="160" maxlength="255" value="'.$row[3].'">';
-				}
-				else
-				{
-					echo'<INPUT TYPE="text" class="ftexto" NAME="vimporta_editar'.$da.'" title="Escribir la importancia de la actividad" size="160" readonly="readonly" maxlength="255" value="'.$row[3].'">';
+			echo '<td><font size="1">';
+				if ($estado>0) {
+					echo'<INPUT TYPE="text" class="ftexto" NAME="vimporta_editar'.$da.'" title="Escribir la importancia de la actividad" style="width: 98%;" maxlength="255" value="'.$row[3].'">';
+				} else {
+					echo'<INPUT TYPE="text" class="ftexto" NAME="vimporta_editar'.$da.'" title="Escribir la importancia de la actividad" style="width: 98%;" readonly="readonly" maxlength="255" value="'.$row[3].'">';
 				}
 			echo'</font></td>';
 		echo '</tr>';
 
 		echo '<tr>';
-			echo '<td  bgcolor="'.$tcol.'"><font size="1">Meta</font></td>';
+			echo '<td bgcolor="'.$tcol.'"><font size="1">Meta</font></td>';
 		echo '</tr>';
-
 		echo '<tr>';
-			echo '<td colspan="5"><font size="1">';
-			if ($estado>0)
-			{
-				echo'<INPUT TYPE="text" class="ftexto" NAME="vmeta_editar'.$da.'" title="Escribir la meta a alcanzar en el semestre" size="160" maxlength="255" value="'.$row[8].'">';
-			}
-			else
-			{
-				echo'<INPUT TYPE="text" class="ftexto" NAME="vmeta_editar'.$da.'" title="Escribir la meta a alcanzar en el semestre" size="160" readonly="readonly" maxlength="255" value="'.$row[8].'">';
+			echo '<td><font size="1">';
+			if ($estado>0) {
+				echo'<INPUT TYPE="text" class="ftexto" NAME="vmeta_editar'.$da.'" title="Escribir la meta a alcanzar en el semestre" style="width: 98%;" maxlength="255" value="'.$row[8].'">';
+			} else {
+				echo'<INPUT TYPE="text" class="ftexto" NAME="vmeta_editar'.$da.'" title="Escribir la meta a alcanzar en el semestre" style="width: 98%;" readonly="readonly" maxlength="255" value="'.$row[8].'">';
 			}
 			echo'</font></td>';
 		echo '</tr>';
 
-	
 	
 
 	//Validacion Plani --Yoel 23-10-18
@@ -3873,7 +3877,7 @@ cierra($result_detalle_trab);
 if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
 {
 
-		?>
+	?>
 <script language="javascript">
 function actualizarTipoActividad() {
     var actividad = document.getElementById("actividad").value;
@@ -3988,148 +3992,221 @@ function actualizarDetalleActividad() {
     });
 }
 </script>
-<?php
 
-		echo '<table border="0" cellspacing="2" bgcolor="#CCE6FF">';
+<?php
+		// Array con las opciones para el nuevo combobox
+		$dependencias = [
+			"AC : Área de Contabilidad",
+			"AGPH : Área de Gestión del Potencial Humano",
+			"AIR : Área de Impresiones y Reproducciones",
+			"AIM : Área de Infraestructura y Mantenimiento",
+			"AL : Área de Logística",
+			"AS : Área de Servicios",
+			"AT : Area de Tesorería",
+			"CP : Carrera de Psicología",
+			"DFECH : Decanato de la Fac. de Educación, Cs. Comunic. y Hum.",
+			"DFAU : Decanato de la Facultad de Arquitectura y Urbanismo",
+			"DFCS : Decanato de la Facultad de Cs. De la Salud",
+			"DFCE : Decanato de la Facultad de Cs. Empresariales",
+			"DFDP : Decanato de la Facultad de Derecho y Cs. Políticas",
+			"DFI : Decanato de la Facultad de Ingeniería",
+			"DGA : Direccion General de Administración",
+			"EP-D : Escuela de Postgrado - Dirección",
+			"EPA : Escuela Profesional de Administración",
+			"EPANI : Escuela Profesional de Administración de Negocios Internacionales",
+			"EPATH : Escuela Profesional de Administración Turístico-Hotelera",
+			"EPAQ : Escuela Profesional de Arquitectura",
+			"EPCF : Escuela Profesional de Ciencias Contables y Financieras",
+			"ECC : Escuela Profesional de Ciencias de la Comunicación",
+			"EPD : Escuela Profesional de Derecho",
+			"EPE : Escuela Profesional de Economía",
+			"EPEM : Escuela Profesional de Economía y Microfinanzas",
+			"EPED : Escuela Profesional de Educación",
+			"EPIA : Escuela Profesional de Ingeniería Agroindustrial",
+			"EPIAM : Escuela Profesional de Ingeniería Ambiental",
+			"EPIC : Escuela Profesional de Ingeniería Civil",
+			"EPICM : Escuela Profesional de Ingeniería Comercial",
+			"EPIS : Escuela Profesional de Ingeniería de Sistemas",
+			"EPIE : Escuela Profesional de Ingeniería Electrónica",
+			"EPII : Escuela Profesional de Ingeniería Industrial",
+			"EPMH : Escuela Profesional de Medicina Humana",
+			"EPO : Escuela Profesional de Odontología",
+			"EPTM : Escuela Profesional de Tecnología Médica",
+			"IEVV : Institución Educativa Verdad y Vida",
+			"LCAP : Laboratorio Clínico y Anatomía Patológica",
+			"OAM : Oficina de Admisión y Marketing",
+			"OAJL : Oficina de Asesoría Jurídica y Legal",
+			"OBSA : Oficina de Biblioteca y Servicios Académicos",
+			"OBUN : Oficina de Bienestar Universitario",
+			"OCI : Oficina de Control Interno",
+			"ODU : Oficina de Defensoria Universitaria",
+			"OEV : Oficina de Educación Virtual",
+			"OGC : Oficina de Gestión de la Calidad",
+			"OGPAD : Oficina de Gestión de Procesos Académicos y Docencia",
+			"OII : Oficina de Imagen Institucional",
+			"OPD : Oficina de Planeamiento y Desarrollo",
+			"OPITT : Oficina de Procesos de Investigación y Transferencia Tecnológica",
+			"ORNI : Oficina de Relaciones Nacionales e Internacionales",
+			"ORSU : Oficina de Responsabilidad Social Universitaria",
+			"OTI : Oficina de Tecnologías de la Información",
+			"RUPT : Radio UPT",
+			"R : Rectorado",
+			"SG : Secretaría General",
+			"TFYR : Terapia Física y Rehabilitación",
+			"VRA : Vice Rectorado Académico",
+			"VRI : Vice Rectorado de Investigación"
+		];
+
+		// Se define el número de columnas para que los colspan sean consistentes
+		$num_columnas = 4;
+
+		echo '<table border="0" cellspacing="2" bgcolor="#CCE6FF" style="width: 100%;">'; // Se añade un ancho a la tabla
 				echo '<tr>';
-			echo '<td width="120" colspan="2"><font size="1">Actividad</font></td>';
+			echo '<td colspan="'.$num_columnas.'"><font size="1">Actividad</font></td>';
 			echo '</tr>';
+			
+			// Fila para los comboboxes, cada uno en su celda
 			echo '<tr>';
-			echo '<td width="120" colspan="2">';
 			
 			// Primer Combobox - Actividad
-			echo '<select size="1" id="actividad" name="vacti" onchange="actualizarTipoActividad()">';
+			echo '<td>';
+			echo '<select size="1" id="actividad" name="vacti" onchange="actualizarTipoActividad()" style="width: 100%;">';
 			echo '<option value="">-- Seleccione --</option>';
 			echo '<option value="Academica">Académica</option>';
 			echo '<option value="Administrativa">Administrativa</option>';
 			echo '</select>';
+			echo '</td>';
 			
 			// Segundo Combobox - Tipo de Actividad
-			echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tipo de Actividad: ";
-			echo '<select size="1" id="tipo_actividad" name="vtipo" onchange="actualizarDetalleActividad()">';
+			echo '<td>';
+			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Tipo de Actividad:</font>';
+			echo '<select size="1" id="tipo_actividad" name="vtipo" onchange="actualizarDetalleActividad()" style="width: 100%;">';
 			echo '<option value="">-- Seleccione --</option>';
 			echo '</select>';
+			echo '</td>';
 			
 			// Tercer Combobox - Detalle de Actividad
-			echo "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Detalle: ";
-			echo '<select size="1" id="detalle_actividad" name="vdetalle">';
+			echo '<td>';
+			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Detalle:</font>';
+			echo '<select size="1" id="detalle_actividad" name="vdetalle" style="width: 100%;">';
 			echo '<option value="">-- Seleccione --</option>';
 			echo '</select>';
-			
-			
 			echo '</td>';
 
+			// Cuarto Combobox - Dependencia (NUEVO)
+			echo '<td>';
+			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Dependencia:</font>';
+			echo '<select size="1" name="vdependencia" style="width: 100%;">';
+			echo '<option value="">-- Seleccione --</option>';
+			foreach ($dependencias as $dependencia) {
+				echo '<option value="' . htmlspecialchars($dependencia) . '">' . htmlspecialchars($dependencia) . '</option>';
+			}
+			echo '</select>';
+			echo '</td>';
+			
+			echo '</tr>';
+			
+			// Fila para las fechas y el porcentaje
+			echo '<tr>';
+			
 			date_default_timezone_set('America/Lima');
-			//$dia=date("d/m/Y");
-			//$dia2=$dia;
-
-			/*Muestra la fecha de inicio y fin del semestre activo - 10-06-2016 naty cuando carga la pagina por primera vez*/
 			$conn=conex();
 			$sql="select s.inicioclases, s.finentregaactas from semestre s where s.activo>0 and s.idsem=".$sem;
-			//echo $sql;
 			$result=luis($conn, $sql);
-			while ($row=fetchrow($result,-1))
-			{
+			while ($row=fetchrow($result,-1)) {
 				$FechaInicio = $row[0];
 				$FechaFin = $row[1];
 			}
 			cierra($result);
 			$dia=date("d/m/Y",strtotime($FechaInicio));
 			$dia2=date("d/m/Y",strtotime($FechaFin));
-			/*Muestra la fecha de inicio y fin del semestre activo - 10-06-2016*/
 
-			if (isset($_POST["datebox"])==true){
-				$dia=$_POST["datebox"];
-			}
-			if (isset($_POST["datebox2"])==true){
-				$dia2=$_POST["datebox2"];
-			}
+			if (isset($_POST["datebox"])==true){ $dia=$_POST["datebox"]; }
+			if (isset($_POST["datebox2"])==true){ $dia2=$_POST["datebox2"]; }
 
-			echo'<td> <font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
-				?>
-				 <input name="datebox" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox,'dd/mm/yyyy',this)" type="text" value=<? echo $dia ?>>
-				<?
-				 /*echo '</td>';*/
-				/*echo '<td>';*/
-				echo '&nbsp;&nbsp;&nbsp;';
-			echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Final:</font>';
-				?>
-				 <input name="datebox2" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox2,'dd/mm/yyyy',this)" type="text" value=<? echo $dia2 ?> >
+			// Fecha Inicio
+			echo '<td colspan="2">'; // Abarca 2 columnas
+			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
+			?>
+			 <input name="datebox" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox,'dd/mm/yyyy',this)" type="text" value=<? echo $dia ?>>
+			&nbsp;&nbsp;
+			<?
+			// Fecha Final
+			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Final:</font>';
+			?>
+			 <input name="datebox2" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox2,'dd/mm/yyyy',this)" type="text" value=<? echo $dia2 ?> >
+			<?
+			echo '</td>';
 
-				<?
-				 echo '</td>';
+			// Porcentaje de avance
+			echo '<td colspan="2">'; // Abarca 2 columnas
+			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance:</font>';
+			echo '<INPUT TYPE="text" class="ftexto" NAME="vporcentaje" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" maxlength="2" value="10">';
+			echo '</td>';
+
 			echo '</tr>';
 
 			echo'<tr>';
-			echo '<td width="108" colspan="3"><font size="1">Detalle Actividad</font></td>';
+			echo '<td colspan="'.$num_columnas.'"><font size="1">Detalle Actividad</font></td>';
 			echo'</tr>';
 			echo'<tr>';
-			/*CAJA DE TEXTO PARA QUE CAPTURA EL Detalle Actividad*/
-			echo '<td width="108" colspan="3"><INPUT TYPE="text" class="ftexto" NAME="vdacti" title="Escribir la actividad que realizara" size="169" maxlength="100"></td>';
+			// CAJA DE TEXTO PARA CAPTURAR EL Detalle Actividad, con ancho automático
+			echo '<td colspan="'.$num_columnas.'"><INPUT TYPE="text" class="ftexto" NAME="vdacti" title="Escribir la actividad que realizara" style="width: 98%;" maxlength="100"></td>';
+			echo '</tr>';
+			
+			echo '<tr>';
+			echo '<td colspan="'.$num_columnas.'"><font size="1">Importancia</font></td>';
 			echo '</tr>';
 			echo '<tr>';
-			echo '<td colspan="5"><font size="1">Importancia</font></td>';
+			// CAJA DE TEXTO QUE CAPTURA LA Importancia
+			echo '<td colspan="'.$num_columnas.'"><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vimporta" title="Escribir la importancia de la actividad" style="width: 98%;" maxlength="255"></font></td>';
+			echo '</tr>';
+			
+			echo '<tr>';
+			echo '<td colspan="'.$num_columnas.'"><font size="1">Meta</font></td>';
 			echo '</tr>';
 			echo '<tr>';
-			/*CAJA DE TEXTO QUE CAPTURA LA Importancia*/
-			echo '<td colspan="5"><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vimporta" title="Escribir la importancia de la actividad" size="169" maxlength="255"></font></td>';
+			// CAJA DE TEXTO QUE CAPTURA LA Meta
+			echo '<td colspan="'.$num_columnas.'"><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vmeta" title="Escribir la meta a alcanzar en el semestre" style="width: 98%;" maxlength="255"></font></td>';
 			echo '</tr>';
-			echo '<td colspan="5"><font size="1">Meta</font></td>';
-			echo '</tr>';
+			
 			echo '<tr>';
-			/*CAJA DE TEXTO QUE CAPTURA LA Meta*/
-			echo '<td colspan="5"><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vmeta" title="Escribir la meta a alcanzar en el semestre" size="169" maxlength="255"></font></td>';
+				echo '<td><font size="1">Medida</font></td>';
+				echo '<td><font size="1">Cant</font></td>';
+				echo '<td><font size="1">Hrs. Semanales</font></td>';
+				echo '<td>&nbsp;</td>'; // Celda vacía para alinear el botón
 			echo '</tr>';
+			
 			echo '<tr>';
-				echo '<td ><font size="1">Medida</font></td>';
-				echo '<td ><font size="1">Cant</font></td>';
-				echo '<td >&nbsp;&nbsp;&nbsp;&nbsp;<font size="1">Hrs. Semanales</font></td>';
-			echo '</tr>';
-			echo '<tr>';
-				echo '<td >';
-
-				/*genera el combo box de MEDIDA*/
+				echo '<td>';
+				// genera el combo box de MEDIDA
 				echo '<select size="1" name="vmedida" title="Seleccionar la magnitud que representa lo establecido como meta">';
 				echo '<option value="Alumnos">Alumnos</option>';
 				echo '<option value="Documento">Documento(s)</option>';
 				echo '<option value="Permanente">Permanente</option>';
 				echo '</select></td>';
-				/*termina de generar el combo box de MEDIDA*/
-				/*ESTA CAJA DE TEXTO CAPTURA LA CANTIDAD DE ALUMNOS , DOCENTES o PERMANTE */
-				echo '<td ><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vcant" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5"></font></td>';
-				/*ESTA CAJA DE TEXTO CAPTURAS LAS HORAS DESTINADAS A LA MEDIDA */
-				echo '<td >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font size="1"><INPUT TYPE="text" class="ftexto" NAME="vhoras" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2"></font>';
-				/*echo '</td >';*/
+				
+				echo '<td><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vcant" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5"></font></td>';
+				
+				echo '<td><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vhoras" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2"></font></td>';
 
-				/*echo '<td >';*/
-				echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-				echo '<font size="1">';
-
-				//echo '<td width="120" ><input class="btns" type="submit" name="vagregar" value="Agregar"/></td>';
-				echo '<input type="hidden" name="vagregar">';
-				/*GENERA EL BOTON AGREGAR ,  EL CUAL INSERTA LOS VALORES DIGITADOS EN LAS CAJAS DE TEXTO Y ENCONTRADOS EN EL COMBO BOX*/
-				/*echo'<td width="50" >';*/
-				echo'&nbsp;&nbsp;&nbsp;&nbsp;';
-
-				/*++++++++++*/
-				//CAPTURO EL IDDEPE
-				/*$sql="select left(Iddepe,3)  from individual where codper =".$codper;*/
+				echo '<td>'; // Celda para el Botón
+				// CAPTURO EL IDDEPE
 				$sql="select Iddepe  from individual where codper =".$codper;
-
 				$result_iddepe=luis($conn, $sql);
-				while ($row=fetchrow($result_iddepe,-1))
-				{
+				while ($row=fetchrow($result_iddepe,-1)) {
 					$iddepe=$row[0];
 				}
 				cierra($result_iddepe);
 
-
 				echo '<input type="hidden" name="coduni" value="'.$codigo.'">';
 				echo '<input type="hidden" name="viddepe" value="'.$iddepe.'">';
-				echo'<input class="btns" type=button onClick="javascript:msj()" value="Agregar"/>';
-				echo'</td>';
+				echo '<input type="hidden" name="vagregar">';
+				echo '<input class="btns" type=button onClick="javascript:msj()" value="Agregar"/>';
+				echo '</td>';
 			echo '</tr>';
 		echo '</table>';
+
 
 } //Fin Validacion Plani --Yoel 23-10-18
 
@@ -4356,7 +4433,7 @@ while ($row=fetchrow($result,-1))
 				<th bgcolor="#DBEAF5">
 					<font size="1">Meta</font>
 				</th>
-
+				<br>
 				<th bgcolor="#DBEAF5">
 					<font size="1">Fecha Inicio</font>
 				</th>
@@ -6032,6 +6109,7 @@ while ($row=fetchrow($result,-1))
 
 
 	/*echo '<tr>';*/
+	echo'<br>';
 	echo'&nbsp;&nbsp; &nbsp; &nbsp; <font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
 
 		$datebox="dateboxx".$da;
