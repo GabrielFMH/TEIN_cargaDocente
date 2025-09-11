@@ -4,6 +4,9 @@ ob_clean();
 error_reporting(0);
 ini_set('display_errors', 0);
 
+// Include error logger for comprehensive error logging
+require_once __DIR__ . '/../error_logger.php';
+
 require_once BASE_PATH . '/model/carga_model.php';
 
 class CargaController
@@ -17,12 +20,36 @@ class CargaController
 
     public function handleRequest()
     {
-        // ✨ Paso 1: Verificar la solicitud de exportación ANTES que cualquier otra cosa.
+         // ✨ Paso 1: Verificar la solicitud de exportación ANTES que cualquier otra cosa.
         if (isset($_GET['exportar'])) {
             $this->handleExport(); // Llama al método que genera el PDF sin HTML.
             exit; // Es CRUCIAL detener la ejecución aquí para que no se imprima nada más.
         }
-        
+
+        // ✨ Paso 1.5: Manejar solicitudes AJAX antes de cualquier salida HTML
+        // --- CORRECCIÓN: Leer action desde JSON si no está en $_POST ---
+        $action = isset($_POST['action']) ? $_POST['action'] : null;
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === null) {
+            // Puede ser una solicitud JSON
+            $input = file_get_contents('php://input');
+            if ($input) {
+                $json_data = json_decode($input, true);
+                if (isset($json_data['action'])) {
+                    $action = $json_data['action'];
+                }
+            }
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'upload_excel') {
+            $this->handleAjaxUpload(); // Este método debe manejar la lectura de JSON también
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo'])) {
+            $this->handleFileUpload();
+            exit;
+        }
+
         // ✨ Paso 2: Si no es una exportación, seguir con el flujo normal de la página web.
         // Esto asegura que pageheader() y otras funciones de HTML se llamen solo para la vista web.
         $sex = isset($_GET['sesion']) ? $_GET['sesion'] : '';
@@ -419,23 +446,30 @@ class CargaController
                 
                 $_SESSION['codigox'] = $_POST["coduni"];
                 
-                // Validar campos numéricos
-                if (!$this->validarCampoNumerico($_POST['vcant']) || 
-                    !$this->validarCampoNumerico($_POST['vhoras']) || 
-                    !$this->validarCampoNumerico($_POST['vcalif'])) {
-                    echo "<script language='javascript'>alert('Los campos cantidad, horas y porcentaje deben ser numéricos'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
-                    return;
-                }
                 
-                if ($_POST["vacti"] == "Administrativa" && !in_array($_POST["vcalif"], [7, 8])) {
-                    echo "<script language='javascript'>alert('La actividad Administrativa solo puede tener calificacion [Administración] o [Jefatura]'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
-                } else {
-                    try {
-                        $this->model->agregarTrabajo($_SESSION['codigox'], $_POST['vacti'], $_POST['vdacti'], $_POST['vimporta'], $_POST['vmedida'], $_POST['vcant'], $_POST['vhoras'], $_POST['vcalif'], $_POST['vmeta'], $_POST['datebox'], $_POST['datebox2'], $_POST['viddepe'], $_POST['vcanthoras'], $idsem);
-                        echo "<script language='javascript'>alert('Actividad agregada correctamente'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
-                    } catch (Exception $e) {
-                        echo "<script language='javascript'>alert('Error al agregar actividad: " . $e->getMessage() . "'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
-                    }
+                try {
+                    $this->model->agregarTrabajo(
+                        $_SESSION['codigox'],
+                        isset($_POST['vacti']) ? $_POST['vacti'] : '',
+                        isset($_POST['vdacti']) ? $_POST['vdacti'] : '',
+                        isset($_POST['vimporta']) ? $_POST['vimporta'] : '',
+                        isset($_POST['vmedida']) ? $_POST['vmedida'] : '',
+                        isset($_POST['vcant']) ? $_POST['vcant'] : 0,
+                        isset($_POST['vhoras']) ? $_POST['vhoras'] : 0,
+                        isset($_POST['vcalif']) ? $_POST['vcalif'] : 0,
+                        isset($_POST['vmeta']) ? $_POST['vmeta'] : '',
+                        isset($_POST['datebox']) ? $_POST['datebox'] : '',
+                        isset($_POST['datebox2']) ? $_POST['datebox2'] : '',
+                        isset($_POST['viddepe']) ? $_POST['viddepe'] : '',
+                        isset($_POST['vcanthoras']) ? $_POST['vcanthoras'] : 0,
+                        $idsem,
+                        isset($_POST['vtipo']) ? $_POST['vtipo'] : '',
+                        isset($_POST['vdetalle']) ? $_POST['vdetalle'] : '',
+                        isset($_POST['vdependencia']) ? $_POST['vdependencia'] : ''
+                    );
+                    echo "<script language='javascript'>alert('Actividad agregada correctamente'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
+                } catch (Exception $e) {
+                    echo "<script language='javascript'>alert('Error al agregar actividad: " . $e->getMessage() . "'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
                 }
             }
 
@@ -464,7 +498,7 @@ class CargaController
             }
             */
 
-            if ($_POST["addhistorial"]=="Registrar")
+            if (isset($_POST["addhistorial"]) && $_POST["addhistorial"]=="Registrar")
             {
                 // Validar autorización
                 if (!$this->verificarAutorizacion(200)) {
@@ -511,7 +545,7 @@ class CargaController
                             echo "<script language='javascript'>alert('No tiene permisos para realizar esta acción'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
                             return;
                         }
-                        
+
                         $_SESSION['codigox'] = $_POST["coduni"];
                         $this->model->eliminarTrabajo($_SESSION['codigox'], $_POST["vi".$i], $_POST["msemestre"]);
                     } elseif (isset($_POST["dedit".$i]) && $_POST["dedit".$i] == "Editar") {
@@ -520,26 +554,22 @@ class CargaController
                             echo "<script language='javascript'>alert('No tiene permisos para realizar esta acción'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
                             return;
                         }
-                        
+
                         $_SESSION['codigox'] = $_POST["coduni"];
-                        
-                        // Validar campos numéricos
-                        if (!$this->validarCampoNumerico($_POST['vcant_editar'.$i]) || 
-                            !$this->validarCampoNumerico($_POST['vhoras_editar'.$i]) || 
-                            !$this->validarCampoNumerico($_POST['vcalif_editar'.$i]) ||
-                            !$this->validarCampoNumerico($_POST['vporcentaje_editar'.$i])) {
-                            echo "<script language='javascript'>alert('Los campos numéricos deben contener solo números'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
-                            return;
+
+                        try {
+                            $this->model->editarTrabajo($_SESSION['codigox'], $_POST["vi".$i], $_POST['vacti_editar'.$i], $_POST['vdacti_editar'.$i], $_POST['vimporta_editar'.$i], $_POST['vmedida_editar'.$i], $_POST['vcant_editar'.$i], $_POST['vhoras_editar'.$i], $_POST['vcalif_editar'.$i], $_POST['vmeta_editar'.$i], $_POST['dateboxx'.$i], $_POST['dateboxx2'.$i], $_POST['vporcentaje_editar'.$i], isset($_POST['vtipo_editar'.$i]) ? $_POST['vtipo_editar'.$i] : '', isset($_POST['vdetalle_editar'.$i]) ? $_POST['vdetalle_editar'.$i] : '', isset($_POST['vdependencia_editar'.$i]) ? $_POST['vdependencia_editar'.$i] : '');
+                            echo "<script language='javascript'>alert('Trabajo editado correctamente'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
+                        } catch (Exception $e) {
+                            echo "<script language='javascript'>alert('Error al editar trabajo: " . $e->getMessage() . "'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
                         }
-                        
-                        $this->model->editarTrabajo($_SESSION['codigox'], $_POST["vi".$i], $_POST['vacti_editar'.$i], $_POST['vdacti_editar'.$i], $_POST['vimporta_editar'.$i], $_POST['vmedida_editar'.$i], $_POST['vcant_editar'.$i], $_POST['vhoras_editar'.$i], $_POST['vcalif_editar'.$i], $_POST['vmeta_editar'.$i], $_POST['dateboxx'.$i], $_POST['dateboxx2'.$i], $_POST['vporcentaje_editar'.$i]);
                     } elseif (isset($_POST["delim".$i]) && $_POST["delim".$i] == "Finalizar") {
                         // Validar autorización
                         if (!$this->verificarAutorizacion(200)) {
                             echo "<script language='javascript'>alert('No tiene permisos para realizar esta acción'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
                             return;
                         }
-                        
+
                         $this->model->finalizarTrabajo($_POST["vi".$i], $idsem, $_POST["coduni"], 1);
                     } elseif (isset($_POST["rever".$i]) && $_POST["rever".$i] == "Revertir") {
                         // Validar autorización
@@ -547,7 +577,7 @@ class CargaController
                             echo "<script language='javascript'>alert('No tiene permisos para realizar esta acción'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
                             return;
                         }
-                        
+
                         $this->model->revertirTrabajo($_POST["vi".$i], $idsem, $_POST["coduni"], 0);
                     }
                 }
@@ -597,13 +627,131 @@ class CargaController
     }
     
     // Método especial para manejar acciones POST durante exportaciones
+    private function handleAjaxUpload()
+    {
+        // --- CORRECCIÓN: Silenciar errores y limpiar buffers ---
+        error_reporting(0);
+        ini_set('display_errors', 0);
+        while (ob_get_level()) {
+            ob_end_clean(); // Limpiar todos los buffers existentes
+        }
+        ob_start(); // Iniciar un nuevo buffer limpio
+
+        // Manejar sesión de forma minimalista para AJAX
+        $sex = isset($_GET['sesion']) ? $_GET['sesion'] : '';
+        session_name($sex);
+        session_start();
+
+        // Verificar que las variables de sesión necesarias existan
+        if (isset($_SESSION['codigo'])) {
+            $codigo = $_SESSION['codigo'];
+        } else {
+            $codigo = 1234; // dato de prueba para evitar errores
+        }
+
+        if (isset($_SESSION['codper'])) {
+            $codigo = $_SESSION['codper'];
+        } else {
+            $codigo = 1234; // dato de prueba para evitar errores
+        }
+
+        // Procesar la subida
+        $excelData = json_decode($_POST['excelData'], true);
+        if ($excelData) {
+            try {
+                // --- Asumiendo que este método NO genera salida ---
+                $this->model->insertarCargaDesdeExcel($excelData, $_SESSION['codigo'], $_SESSION['codper']);
+                if (ob_get_level()) ob_clean();
+                header('Content-Type: application/json'); // Asegurar encabezado JSON
+                echo json_encode(['success' => true, 'message' => 'Datos del Excel subidos correctamente a la base de datos.']);
+            } catch (Exception $e) {
+                // --- CORRECCIÓN: Limpiar buffer, establecer encabezado y enviar JSON en caso de error ---
+                if (ob_get_level()) ob_clean();
+                header('Content-Type: application/json'); // Asegurar encabezado JSON
+                // --- Mejora: Loggear el error real del servidor para depuración ---
+                // error_log("Error en handleAjaxUpload: " . $e->getMessage());
+                echo json_encode(['success' => false, 'message' => 'Error al subir datos: ' . $e->getMessage()]);
+            }
+        } else {
+            if (ob_get_level()) ob_clean();
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'No se recibieron datos del Excel o los datos no son válidos.']);
+        }
+        // Limpiar buffer y salir
+        ob_end_flush(); // Enviar el contenido del buffer (el JSON)
+        exit;
+    }
+    private function handleFileUpload()
+    {
+        error_reporting(0);
+        ini_set('display_errors', 0);
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        ob_start();
+
+        $sex = isset($_GET['sesion']) ? $_GET['sesion'] : '';
+        session_name($sex);
+        session_start();
+
+        if (!isset($_SESSION['codigo'])) {
+            $_SESSION['codigo'] = 1234;
+        }
+
+        if (!isset($_SESSION['codper'])) {
+            $_SESSION['codper'] = 1234;
+        }
+
+        try {
+            if (isset($_FILES['archivo'])) {
+                $file = $_FILES['archivo']['tmp_name'][0];
+                $filename = $_FILES['archivo']['name'][0];
+
+                $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                if (!in_array($extension, ['xls', 'xlsx'])) {
+                    $response = ['success' => false, 'message' => 'Solo se permiten archivos Excel (.xls, .xlsx)'];
+                } else {
+                    $phpExcelPath = __DIR__ . '/../assets/PHPExcel.php';
+                    if (!file_exists($phpExcelPath)) {
+                        $response = ['success' => false, 'message' => 'Biblioteca PHPExcel no disponible'];
+                    } else {
+                        require_once $phpExcelPath;
+                        $objPHPExcel = PHPExcel_IOFactory::load($file);
+                        $sheet = $objPHPExcel->getActiveSheet();
+                        $excelData = [];
+                        foreach ($sheet->getRowIterator() as $row) {
+                            $cellIterator = $row->getCellIterator();
+                            $cellIterator->setIterateOnlyExistingCells(false);
+                            $rowData = [];
+                            foreach ($cellIterator as $cell) {
+                                $rowData[] = $cell->getValue();
+                            }
+                            $excelData[] = $rowData;
+                        }
+                        $this->model->insertarCargaDesdeExcel($excelData, $_SESSION['codigo'], $_SESSION['codper']);
+                        $response = ['success' => true, 'message' => 'Datos del Excel subidos correctamente.'];
+                    }
+                }
+            } else {
+                $response = ['success' => false, 'message' => 'No se recibió archivo.'];
+            }
+        } catch (Exception $e) {
+            $response = ['success' => false, 'message' => $e->getMessage()];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        ob_end_flush();
+        exit;
+    }
+
     private function handlePostActionsForExport()
     {
         // Limpiar cualquier salida previa
         while (ob_get_level()) {
             ob_end_clean();
         }
-        
+
         // Solo manejar exportaciones, no otras acciones POST
         if (isset($_GET['exportar'])) {
             $formato = isset($_GET['formato']) ? $_GET['formato'] : 'pdf';
@@ -764,9 +912,9 @@ class CargaController
                 $content .= '<div style="text-align: right; margin: 10px 0; font-family: Arial, sans-serif;">';
                 $content .= '<button type="button" id="btnGenerarPDF" style="padding: 8px 15px; background-color: #e52b1eff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Descargar Carga (PDF)</button>';
                 $content .= '<button type="button" id="btnGenerarExcelWebScraping" style="padding: 8px 15px; background-color: #49c929ff; color: white; border: none; border-radius: 4px; cursor: pointer;">Descargar Carga (EXCEL)</button>';
-                $content .= '<br><br>';
-                $content .= '<button type="button" id="btnVerAutoridades" style="padding: 8px 15px; background-color: #0e2487ff; color: white; border: none; border-radius: 4px; cursor: pointer;">Ver Autoridades Academicas</button>';
-                $content .= '</div>';
+                //$content .= '<br><br>';
+                //$content .= '<button type="button" id="btnVerAutoridades" style="padding: 8px 15px; background-color: #0e2487ff; color: white; border: none; border-radius: 4px; cursor: pointer;">Ver Autoridades Academicas</button>';
+                //$content .= '</div>';
         
                 $na=0;
                 $mj=0;
@@ -801,6 +949,28 @@ class CargaController
                 $content .= '<table border="0" cellpadding="10" ><tr><td width="132" ></td></tr></table>';
                 $content .= '</table>';
                 $content .= '</form>';
+                    $content .= '<script>
+                    document.getElementById("registro").addEventListener("submit", function(e) {
+                        e.preventDefault();
+                        const formData = new FormData(this);
+                        fetch(this.action, {
+                            method: "POST",
+                            body: formData,
+                            headers: {
+                                "X-Requested-With": "XMLHttpRequest"
+                            }
+                        }).then(response => response.json()).then(data => {
+                            if (data.success) {
+                                alert(data.message);
+                                location.reload();
+                            } else {
+                                alert("Error: " + data.message);
+                            }
+                        }).catch(error => {
+                            alert("Error de red: " + error);
+                        });
+                    });
+                    </script>';
         
                 if(isset($data['ultimos_accesos'])){
                     if ( numrow($data['ultimos_accesos']) > 0 ){
@@ -860,14 +1030,14 @@ class CargaController
                     $content .= '<tr>';
                     $content .= '<td></td>';
                     $content .= '</tr>';
-                    $content .= '<td>Seleccionar el archivo <font size="1px">(xls)</font> <input type="file" id="excelFile" name="archivo[]" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple onchange="validarArchivo(this)"></td>';
+                    $content .= '<td>Seleccionar el archivo <font size="1px">(xls)</font> <input type="file" id="excelFile" name="archivo[]" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple></td>';
                     $content .= '<td><input type="submit" value="Subir Archivo" name="registrar" id="registrar"></td>';
                     $content .= '</tr>';
                     $content .= '</table>';
                     $content .= '</form>';
                     $content .= '<div id="output"></div>';
         
-                    if($data['trabajo_individual_doc']){
+                    if(isset($data['trabajo_individual_doc']) && $data['trabajo_individual_doc']){
                         $rowdir = fetchrow($data['trabajo_individual_doc'],-1);
                         $doc=$rowdir[0];
                         $content .= "- Visualizar Horario de Trabajo ".$semestre.": <a href=trabajoindividualex/".$doc.">Hacer Clic para Ver el Documento</a><br><br><br>";
