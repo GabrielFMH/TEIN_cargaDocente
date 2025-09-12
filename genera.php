@@ -3514,8 +3514,8 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 				
 				// Porcentaje de avance
 				echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance:</font>';
-				echo' <INPUT TYPE="text" class="ftexto" NAME="vporcentaje_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" readonly="readonly" maxlength="2" value="'.$row[11].'">';
-			echo '</font></td>';
+				echo' <INPUT TYPE="text" class="ftexto" NAME="vporcentaje_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" maxlength="2" value="'.$row[11].'">';
+				echo '</font></td>';
 		echo '</tr>';
 
 		echo'<tr>';
@@ -6155,8 +6155,8 @@ while ($row=fetchrow($result,-1))
 							echo '<option value="'.$porcentaje.'">'.$porcentaje.'</option>';
 															}
 			echo '</select>';*/
+echo'<INPUT TYPE="text" class="ftexto" NAME="vporcentaje_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" maxlength="2" value="'.$row[11].'">';
 
-			echo'<INPUT TYPE="text" class="ftexto" NAME="vporcentaje_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" readonly="readonly" maxlength="2" value="'.$row[11].'">';
 
 
 		 echo '</td>';
