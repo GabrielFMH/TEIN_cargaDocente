@@ -1,0 +1,60 @@
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): message: Invalid column name 'IdPeriodoPersona'. (severity 16) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): General SQL Server error: Check messages from the SQL Server (severity 16) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): message: Invalid column name 'IdPeriodoPersona'. (severity 16) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): General SQL Server error: Check messages from the SQL Server (severity 16) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): Query failed on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_fetch_row() expects parameter 1 to be resource, boolean given on line 82
+Context: {"result":false,"n":-1,"host":"crom12","usuario":"sisintranet","pass":"N3utr1n0s","data":"upT","rutase":"E:\/php\/upt","port":1433,"dbx":1,"tiempo":12000,"padtime":240000,"semi":["Quadro","Tigera","Sadnes"]}
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): message: Incorrect syntax near '='. (severity 15) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): General SQL Server error: Check messages from the SQL Server (severity 15) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): Query failed on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): message: Incorrect syntax near ','. (severity 15) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): General SQL Server error: Check messages from the SQL Server (severity 15) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): Query failed on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_fetch_row() expects parameter 1 to be resource, boolean given on line 82
+Context: {"result":false,"n":-1,"host":"crom12","usuario":"sisintranet","pass":"N3utr1n0s","data":"upT","rutase":"E:\/php\/upt","port":1433,"dbx":1,"tiempo":12000,"padtime":240000,"semi":["Quadro","Tigera","Sadnes"]}
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_data_seek() expects parameter 1 to be resource, boolean given on line 86
+Context: {"result":false,"n":0,"host":"crom12","usuario":"sisintranet","pass":"N3utr1n0s","data":"upT","rutase":"E:\/php\/upt","port":1433,"dbx":1,"tiempo":12000,"padtime":240000,"semi":["Quadro","Tigera","Sadnes"]}
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): message: Incorrect syntax near the keyword 'AND'. (severity 15) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): General SQL Server error: Check messages from the SQL Server (severity 15) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): message: Incorrect syntax near the keyword 'AND'. (severity 15) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): General SQL Server error: Check messages from the SQL Server (severity 15) on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: mssql_query(): Query failed on line 230
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:11:35] E_WARNING: require(config.php): failed to open stream: No such file or directory on line 182
+Context: 
+--------------------------------------------------------------------------------

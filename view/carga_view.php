@@ -188,7 +188,7 @@ document.getElementById("excelFile").addEventListener("change", function(e) {
         // Convertir a texto (matriz JSON)
         const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false });
 
-        // Mostrar en HTML
+        // Mostrar en HTML (incluyendo headers)
         let html = "<table border='1'>";
         rows.forEach(row => {
             html += "<tr>";
@@ -199,7 +199,31 @@ document.getElementById("excelFile").addEventListener("change", function(e) {
         });
         html += "</table>";
 
-        document.getElementById("output").innerHTML = html;
+        document.getElementById("output").innerHTML = html + '<br><button id="uploadBtn" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Subir a Base de Datos</button>';
+
+        // Agregar evento al botón de subida
+        document.getElementById("uploadBtn").addEventListener("click", function() {
+            // Enviar datos sin la primera fila (asumiendo que es headers)
+            const dataToSend = rows.length > 1 ? rows.slice(1) : rows;
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ excelData: dataToSend, action: 'upload_excel' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    // Opcional: recargar la página o limpiar el output
+                    // location.reload();
+                }
+            })
+            .catch(error => {
+                alert('Error al subir datos: ' + error);
+            });
+        });
     };
 
     reader.readAsArrayBuffer(file);

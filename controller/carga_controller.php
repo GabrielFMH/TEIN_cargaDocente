@@ -448,24 +448,41 @@ class CargaController
                 
                 
                 try {
+                    // Preparar parámetros con validación
+                    $vacti = isset($_POST['vacti']) && !empty($_POST['vacti']) ? $_POST['vacti'] : '';
+                    $vdacti = isset($_POST['vdacti']) && !empty($_POST['vdacti']) ? $_POST['vdacti'] : '';
+                    $vimporta = isset($_POST['vimporta']) && !empty($_POST['vimporta']) ? $_POST['vimporta'] : '';
+                    $vmedida = isset($_POST['vmedida']) && !empty($_POST['vmedida']) ? $_POST['vmedida'] : '';
+                    $vcant = isset($_POST['vcant']) && is_numeric($_POST['vcant']) ? (int)$_POST['vcant'] : 0;
+                    $vhoras = isset($_POST['vhoras']) && is_numeric($_POST['vhoras']) ? (float)$_POST['vhoras'] : 0;
+                    $vcalif = isset($_POST['vcalif']) && is_numeric($_POST['vcalif']) ? (float)$_POST['vcalif'] : 0;
+                    $vmeta = isset($_POST['vmeta']) && !empty($_POST['vmeta']) ? $_POST['vmeta'] : '';
+                    $datebox = isset($_POST['datebox']) && !empty($_POST['datebox']) ? $_POST['datebox'] : '';
+                    $datebox2 = isset($_POST['datebox2']) && !empty($_POST['datebox2']) ? $_POST['datebox2'] : '';
+                    $viddepe = isset($_POST['viddepe']) && !empty($_POST['viddepe']) ? $_POST['viddepe'] : '';
+                    $vcanthoras = isset($_POST['vcanthoras']) && is_numeric($_POST['vcanthoras']) ? (int)$_POST['vcanthoras'] : 0;
+                    $vtipo = isset($_POST['vtipo']) && !empty($_POST['vtipo']) ? $_POST['vtipo'] : '';
+                    $vdetalle = isset($_POST['vdetalle']) && !empty($_POST['vdetalle']) ? $_POST['vdetalle'] : null;
+                    $vdependencia = isset($_POST['vdependencia']) && !empty($_POST['vdependencia']) ? $_POST['vdependencia'] : null;
+
                     $this->model->agregarTrabajo(
                         $_SESSION['codigox'],
-                        isset($_POST['vacti']) ? $_POST['vacti'] : '',
-                        isset($_POST['vdacti']) ? $_POST['vdacti'] : '',
-                        isset($_POST['vimporta']) ? $_POST['vimporta'] : '',
-                        isset($_POST['vmedida']) ? $_POST['vmedida'] : '',
-                        isset($_POST['vcant']) ? $_POST['vcant'] : 0,
-                        isset($_POST['vhoras']) ? $_POST['vhoras'] : 0,
-                        isset($_POST['vcalif']) ? $_POST['vcalif'] : 0,
-                        isset($_POST['vmeta']) ? $_POST['vmeta'] : '',
-                        isset($_POST['datebox']) ? $_POST['datebox'] : '',
-                        isset($_POST['datebox2']) ? $_POST['datebox2'] : '',
-                        isset($_POST['viddepe']) ? $_POST['viddepe'] : '',
-                        isset($_POST['vcanthoras']) ? $_POST['vcanthoras'] : 0,
+                        $vacti,
+                        $vdacti,
+                        $vimporta,
+                        $vmedida,
+                        $vcant,
+                        $vhoras,
+                        $vcalif,
+                        $vmeta,
+                        $datebox,
+                        $datebox2,
+                        $viddepe,
+                        $vcanthoras,
                         $idsem,
-                        isset($_POST['vtipo']) ? $_POST['vtipo'] : '',
-                        isset($_POST['vdetalle']) ? $_POST['vdetalle'] : '',
-                        isset($_POST['vdependencia']) ? $_POST['vdependencia'] : ''
+                        $vtipo,
+                        $vdetalle,
+                        $vdependencia
                     );
                     echo "<script language='javascript'>alert('Actividad agregada correctamente'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
                 } catch (Exception $e) {
@@ -558,7 +575,40 @@ class CargaController
                         $_SESSION['codigox'] = $_POST["coduni"];
 
                         try {
-                            $this->model->editarTrabajo($_SESSION['codigox'], $_POST["vi".$i], $_POST['vacti_editar'.$i], $_POST['vdacti_editar'.$i], $_POST['vimporta_editar'.$i], $_POST['vmedida_editar'.$i], $_POST['vcant_editar'.$i], $_POST['vhoras_editar'.$i], $_POST['vcalif_editar'.$i], $_POST['vmeta_editar'.$i], $_POST['dateboxx'.$i], $_POST['dateboxx2'.$i], $_POST['vporcentaje_editar'.$i], isset($_POST['vtipo_editar'.$i]) ? $_POST['vtipo_editar'.$i] : '', isset($_POST['vdetalle_editar'.$i]) ? $_POST['vdetalle_editar'.$i] : '', isset($_POST['vdependencia_editar'.$i]) ? $_POST['vdependencia_editar'.$i] : '');
+                            // Preparar parámetros con validación para edición
+                            $vacti_editar = isset($_POST['vacti_editar'.$i]) && !empty($_POST['vacti_editar'.$i]) ? $_POST['vacti_editar'.$i] : '';
+                            $vdacti_editar = isset($_POST['vdacti_editar'.$i]) && !empty($_POST['vdacti_editar'.$i]) ? $_POST['vdacti_editar'.$i] : '';
+                            $vimporta_editar = isset($_POST['vimporta_editar'.$i]) && !empty($_POST['vimporta_editar'.$i]) ? $_POST['vimporta_editar'.$i] : '';
+                            $vmedida_editar = isset($_POST['vmedida_editar'.$i]) && !empty($_POST['vmedida_editar'.$i]) ? $_POST['vmedida_editar'.$i] : '';
+                            $vcant_editar = isset($_POST['vcant_editar'.$i]) && is_numeric($_POST['vcant_editar'.$i]) ? (int)$_POST['vcant_editar'.$i] : 0;
+                            $vhoras_editar = isset($_POST['vhoras_editar'.$i]) && is_numeric($_POST['vhoras_editar'.$i]) ? (float)$_POST['vhoras_editar'.$i] : 0;
+                            $vcalif_editar = isset($_POST['vcalif_editar'.$i]) && is_numeric($_POST['vcalif_editar'.$i]) ? (float)$_POST['vcalif_editar'.$i] : 0;
+                            $vmeta_editar = isset($_POST['vmeta_editar'.$i]) && !empty($_POST['vmeta_editar'.$i]) ? $_POST['vmeta_editar'.$i] : '';
+                            $dateboxx = isset($_POST['dateboxx'.$i]) && !empty($_POST['dateboxx'.$i]) ? $_POST['dateboxx'.$i] : '';
+                            $dateboxx2 = isset($_POST['dateboxx2'.$i]) && !empty($_POST['dateboxx2'.$i]) ? $_POST['dateboxx2'.$i] : '';
+                            $vporcentaje_editar = isset($_POST['vporcentaje_editar'.$i]) && is_numeric($_POST['vporcentaje_editar'.$i]) ? (float)$_POST['vporcentaje_editar'.$i] : 0;
+                            $vtipo_editar = isset($_POST['vtipo_editar'.$i]) && !empty($_POST['vtipo_editar'.$i]) ? $_POST['vtipo_editar'.$i] : '';
+                            $vdetalle_editar = isset($_POST['vdetalle_editar'.$i]) && !empty($_POST['vdetalle_editar'.$i]) ? $_POST['vdetalle_editar'.$i] : null;
+                            $vdependencia_editar = isset($_POST['vdependencia_editar'.$i]) && !empty($_POST['vdependencia_editar'.$i]) ? $_POST['vdependencia_editar'.$i] : null;
+
+                            $this->model->editarTrabajo(
+                                $_SESSION['codigox'],
+                                $_POST["vi".$i],
+                                $vacti_editar,
+                                $vdacti_editar,
+                                $vimporta_editar,
+                                $vmedida_editar,
+                                $vcant_editar,
+                                $vhoras_editar,
+                                $vcalif_editar,
+                                $vmeta_editar,
+                                $dateboxx,
+                                $dateboxx2,
+                                $vporcentaje_editar,
+                                $vtipo_editar,
+                                $vdetalle_editar,
+                                $vdependencia_editar
+                            );
                             echo "<script language='javascript'>alert('Trabajo editado correctamente'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
                         } catch (Exception $e) {
                             echo "<script language='javascript'>alert('Error al editar trabajo: " . $e->getMessage() . "'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";

@@ -1,5 +1,8 @@
 <?php
 
+// Include error logger for comprehensive error logging
+require_once __DIR__ . '/../error_logger.php';
+
 class CargaModel
 {
     private $conn;
@@ -8,6 +11,9 @@ class CargaModel
     {
         require_once 'funciones.php';
         $this->conn = conex();
+        if (!$this->conn) {
+            throw new Exception('No se pudo establecer conexión con la base de datos');
+        }
     }
 
     public function __destruct()
@@ -19,8 +25,34 @@ class CargaModel
 
     private function execute_query($sql)
     {
-        $result = luis($this->conn, $sql);
-        cierra($result);
+        try {
+            $result = luis($this->conn, $sql);
+            if (!$result) {
+                // Intentar obtener el último error de la conexión
+                $error_msg = 'Error desconocido en la ejecución de la consulta';
+                if (function_exists('mssql_get_last_message')) {
+                    $error_msg = mssql_get_last_message();
+                } elseif (function_exists('sqlsrv_errors')) {
+                    $errors = sqlsrv_errors();
+                    if ($errors) {
+                        $error_msg = $errors[0]['message'];
+                    }
+                }
+                throw new Exception('Error al ejecutar consulta SQL: ' . $error_msg . '. SQL: ' . $sql);
+            }
+            cierra($result);
+        } catch (Exception $e) {
+            // Log del error para depuración usando el sistema personalizado
+            $timestamp = date('Y-m-d H:i:s');
+            $errorMessage = sprintf(
+                "[%s] ERROR en execute_query: %s | SQL: %s\n" . str_repeat('-', 80) . "\n",
+                $timestamp,
+                $e->getMessage(),
+                $sql
+            );
+            writeToLogFile($errorMessage, __FILE__);
+            throw $e;
+        }
     }
 
     // Método para validar que la suma de porcentajes no exceda 100%
@@ -292,27 +324,188 @@ class CargaModel
         $this->execute_query($sql);
     }
 
-    public function agregarTrabajo($codigox, $vacti, $vdacti, $vimporta, $vmedida, $vcant, $vhoras, $vcalif, $vmeta, $vdatebox, $vdatebox2, $viddepe, $vcanthoras, $idsem)
+    public function agregarTrabajo($codigox, $vacti, $vdacti, $vimporta, $vmedida, $vcant, $vhoras, $vcalif, $vmeta, $vdatebox, $vdatebox2, $viddepe, $vcanthoras, $idsem, $vtipo_actividad = '', $vdetalle_actividad = '', $vdependencia = '')
     {
-        // Validar que vcant solo contenga números
-        if (!is_numeric($vcant)) {
-            throw new Exception('El campo cantidad debe ser numérico');
-        }
-        
         // Validar porcentaje total
         $porcentajeValido = $this->validarPorcentajeTotal($codigox, $idsem, $vcalif);
         if (!$porcentajeValido) {
             throw new Exception('La suma de porcentajes no puede exceder 100%');
         }
-        
+
         // Validar carga horaria
         $validacionCarga = $this->validarCargaHoraria($codigox, $idsem, $vhoras);
         if (!$validacionCarga['valido']) {
             throw new Exception($validacionCarga['mensaje']);
         }
-        
-        $sql = "exec trabiagregar_v2 {$codigox}, '{$vacti}', '{$vdacti}', '{$vimporta}', '{$vmedida}', {$vcant}, {$vhoras}, {$vcalif}, '{$vmeta}', '{$vdatebox}', '{$vdatebox2}', '{$viddepe}', '{$vcanthoras}', {$idsem}";
+
+        try {
+            // Intentar primero con el procedimiento almacenado
+            $this->agregarTrabajoConProcedimiento($codigox, $vacti, $vdacti, $vimporta, $vmedida, $vcant, $vhoras, $vcalif, $vmeta, $vdatebox, $vdatebox2, $viddepe, $vcanthoras, $idsem, $vtipo_actividad, $vdetalle_actividad, $vdependencia);
+        } catch (Exception $e) {
+            // Log del error usando el sistema personalizado
+            $timestamp = date('Y-m-d H:i:s');
+            $errorMessage = sprintf(
+                "[%s] PROCEDIMIENTO FALLÓ - Intentando inserción directa: %s\n" . str_repeat('-', 80) . "\n",
+                $timestamp,
+                $e->getMessage()
+            );
+            writeToLogFile($errorMessage, __FILE__);
+            // Si el procedimiento falla, intentar inserción directa
+            $this->agregarTrabajoDirecto($codigox, $vacti, $vdacti, $vimporta, $vmedida, $vcant, $vhoras, $vcalif, $vmeta, $vdatebox, $vdatebox2, $viddepe, $vcanthoras, $idsem, $vtipo_actividad, $vdetalle_actividad, $vdependencia);
+        }
+    }
+
+    private function agregarTrabajoConProcedimiento($codigox, $vacti, $vdacti, $vimporta, $vmedida, $vcant, $vhoras, $vcalif, $vmeta, $vdatebox, $vdatebox2, $viddepe, $vcanthoras, $idsem, $vtipo_actividad, $vdetalle_actividad, $vdependencia)
+    {
+        // Verificar que el procedimiento existe antes de ejecutarlo
+        $checkProc = "SELECT OBJECT_ID('trabiagregar_v2') as proc_id";
+        $result = luis($this->conn, $checkProc);
+        if (!$result) {
+            throw new Exception('No se pudo verificar la existencia del procedimiento trabiagregar_v2');
+        }
+        $row = fetchrow($result, -1);
+        cierra($result);
+
+        if (!$row[0]) {
+            throw new Exception('El procedimiento almacenado trabiagregar_v2 no existe en la base de datos');
+        }
+
+        // Preparar parámetros con escape adecuado y manejo de null
+        $params = array(
+            'codigox' => $codigox,
+            'vacti' => $vacti !== null ? str_replace("'", "''", $vacti) : '',
+            'vdacti' => $vdacti !== null ? str_replace("'", "''", $vdacti) : '',
+            'vimporta' => $vimporta !== null ? str_replace("'", "''", $vimporta) : '',
+            'vmedida' => $vmedida !== null ? str_replace("'", "''", $vmedida) : '',
+            'vcant' => $vcant,
+            'vhoras' => $vhoras,
+            'vcalif' => $vcalif,
+            'vmeta' => $vmeta !== null ? str_replace("'", "''", $vmeta) : '',
+            'vdatebox' => $vdatebox,
+            'vdatebox2' => $vdatebox2,
+            'viddepe' => $viddepe,
+            'vcanthoras' => $vcanthoras,
+            'idsem' => $idsem,
+            'vtipo_actividad' => $vtipo_actividad !== null ? str_replace("'", "''", $vtipo_actividad) : '',
+            'vdetalle_actividad' => $vdetalle_actividad !== null ? str_replace("'", "''", $vdetalle_actividad) : '',
+            'vdependencia' => $vdependencia !== null ? str_replace("'", "''", $vdependencia) : ''
+        );
+
+        $sql = "exec trabiagregar_v2 {$params['codigox']}, '{$params['vacti']}', '{$params['vdacti']}', '{$params['vimporta']}', '{$params['vmedida']}', {$params['vcant']}, {$params['vhoras']}, {$params['vcalif']}, '{$params['vmeta']}', '{$params['vdatebox']}', '{$params['vdatebox2']}', '{$params['viddepe']}', '{$params['vcanthoras']}', {$params['idsem']}, '{$params['vtipo_actividad']}', '{$params['vdetalle_actividad']}', '{$params['vdependencia']}'";
+
+        // Log detallado usando el sistema personalizado
+        $timestamp = date('Y-m-d H:i:s');
+        $logMessage1 = sprintf(
+            "[%s] AGREGAR TRABAJO - Parámetros preparados para trabiagregar_v2: %s\n" . str_repeat('-', 80) . "\n",
+            $timestamp,
+            json_encode($params, JSON_UNESCAPED_UNICODE)
+        );
+        writeToLogFile($logMessage1, __FILE__);
+
+        $logMessage2 = sprintf(
+            "[%s] AGREGAR TRABAJO - SQL completo: %s\n" . str_repeat('-', 80) . "\n",
+            $timestamp,
+            $sql
+        );
+        writeToLogFile($logMessage2, __FILE__);
+
         $this->execute_query($sql);
+
+        // Verificar que el registro se insertó
+        $checkInsert = "SELECT TOP 1 idtrab FROM trab WHERE codigo = {$codigox} AND actividad = '{$params['vacti']}' ORDER BY idtrab DESC";
+        $resultCheck = luis($this->conn, $checkInsert);
+        if ($resultCheck) {
+            $rowCheck = fetchrow($resultCheck, -1);
+            if ($rowCheck && $rowCheck[0]) {
+                $timestamp = date('Y-m-d H:i:s');
+                $successMessage = sprintf(
+                    "[%s] AGREGAR TRABAJO - Registro insertado exitosamente con ID: %s\n" . str_repeat('-', 80) . "\n",
+                    $timestamp,
+                    $rowCheck[0]
+                );
+                writeToLogFile($successMessage, __FILE__);
+            } else {
+                $timestamp = date('Y-m-d H:i:s');
+                $warningMessage = sprintf(
+                    "[%s] AGREGAR TRABAJO - ADVERTENCIA: No se encontró el registro después de la inserción\n" . str_repeat('-', 80) . "\n",
+                    $timestamp
+                );
+                writeToLogFile($warningMessage, __FILE__);
+            }
+            cierra($resultCheck);
+        }
+    }
+
+    private function agregarTrabajoDirecto($codigox, $vacti, $vdacti, $vimporta, $vmedida, $vcant, $vhoras, $vcalif, $vmeta, $vdatebox, $vdatebox2, $viddepe, $vcanthoras, $idsem, $vtipo_actividad, $vdetalle_actividad, $vdependencia)
+    {
+        try {
+            // Generar número automático de informe
+            $numero_informe = $this->generarNumeroInforme($codigox, $idsem);
+
+            // Preparar parámetros con escape adecuado y manejo de null
+            $params = array(
+                'codigo' => $codigox,
+                'actividad' => $vacti !== null ? str_replace("'", "''", $vacti) : '',
+                'dactividad' => $vdacti !== null ? str_replace("'", "''", $vdacti) : '',
+                'importancia' => $vimporta !== null ? str_replace("'", "''", $vimporta) : '',
+                'medida' => $vmedida !== null ? str_replace("'", "''", $vmedida) : '',
+                'cant' => $vcant,
+                'horas' => $vhoras,
+                'calif' => $vcalif,
+                'meta' => $vmeta !== null ? str_replace("'", "''", $vmeta) : '',
+                'fecha_inicio' => $vdatebox,
+                'fecha_fin' => $vdatebox2,
+                'iddepe' => $viddepe,
+                'numero_informe' => $numero_informe,
+                'idsem' => $idsem,
+                'tipo_actividad' => $vtipo_actividad !== null ? str_replace("'", "''", $vtipo_actividad) : '',
+                'detalle_actividad' => $vdetalle_actividad !== null ? str_replace("'", "''", $vdetalle_actividad) : '',
+                'dependencia' => $vdependencia !== null ? str_replace("'", "''", $vdependencia) : ''
+            );
+
+            $sql = "INSERT INTO trab (codigo, actividad, dactividad, importancia, medida, cant, horas, calif, meta, fecha_inicio, fecha_fin, iddepe, numero_informe, idsem, tipo_actividad, detalle_actividad, dependencia, fecha_creacion, califNuevo)
+                    VALUES ({$params['codigo']}, '{$params['actividad']}', '{$params['dactividad']}', '{$params['importancia']}', '{$params['medida']}', {$params['cant']}, {$params['horas']}, {$params['calif']}, '{$params['meta']}', '{$params['fecha_inicio']}', '{$params['fecha_fin']}', '{$params['iddepe']}', {$params['numero_informe']}, {$params['idsem']}, '{$params['tipo_actividad']}', '{$params['detalle_actividad']}', '{$params['dependencia']}', GETDATE(), (10+{$params['calif']}))";
+
+            // Log de inserción directa usando el sistema personalizado
+            $timestamp = date('Y-m-d H:i:s');
+            $directInsertMessage = sprintf(
+                "[%s] AGREGAR TRABAJO - Insertando directamente en trab: %s\n" . str_repeat('-', 80) . "\n",
+                $timestamp,
+                $sql
+            );
+            writeToLogFile($directInsertMessage, __FILE__);
+
+            $this->execute_query($sql);
+
+            // Verificar que el registro se insertó
+            $checkInsert = "SELECT TOP 1 idtrab FROM trab WHERE codigo = {$codigox} AND actividad = '{$params['actividad']}' ORDER BY idtrab DESC";
+            $resultCheck = luis($this->conn, $checkInsert);
+            if ($resultCheck) {
+                $rowCheck = fetchrow($resultCheck, -1);
+                if ($rowCheck && $rowCheck[0]) {
+                    $timestamp = date('Y-m-d H:i:s');
+                    $directSuccessMessage = sprintf(
+                        "[%s] AGREGAR TRABAJO - Registro insertado directamente exitosamente con ID: %s\n" . str_repeat('-', 80) . "\n",
+                        $timestamp,
+                        $rowCheck[0]
+                    );
+                    writeToLogFile($directSuccessMessage, __FILE__);
+                } else {
+                    throw new Exception('No se pudo verificar la inserción directa');
+                }
+                cierra($resultCheck);
+            }
+
+        } catch (Exception $e) {
+            $timestamp = date('Y-m-d H:i:s');
+            $directErrorMessage = sprintf(
+                "[%s] AGREGAR TRABAJO - Error en inserción directa: %s\n" . str_repeat('-', 80) . "\n",
+                $timestamp,
+                $e->getMessage()
+            );
+            writeToLogFile($directErrorMessage, __FILE__);
+            throw new Exception('Error en inserción directa a la tabla trab: ' . $e->getMessage());
+        }
     }
 
     public function modificarEstadoActividades($mcodigo, $msemestre, $mestado_editar)
@@ -350,13 +543,9 @@ class CargaModel
         $this->execute_query($sql_detalle);
     }
 
-    public function editarTrabajo($codigox, $idtrab, $vacti_editar, $vdacti_editar, $vimporta_editar, $vmedida_editar, $vcant_editar, $vhoras_editar, $vcalif_editar, $vmeta_editar, $vdatebox_editar, $vdatebox2_editar, $vporcentaje_editar)
+    public function editarTrabajo($codigox, $idtrab, $vacti_editar, $vdacti_editar, $vimporta_editar, $vmedida_editar, $vcant_editar, $vhoras_editar, $vcalif_editar, $vmeta_editar, $vdatebox_editar, $vdatebox2_editar, $vporcentaje_editar, $vtipo_actividad_editar = '', $vdetalle_actividad_editar = '', $vdependencia_editar = '')
     {
-        // Validar que vcant y vhoras sean numéricos
-        if (!is_numeric($vcant_editar) || !is_numeric($vhoras_editar) || !is_numeric($vcalif_editar)) {
-            throw new Exception('Los campos cantidad, horas y porcentaje deben ser numéricos');
-        }
-        
+
         // Obtener idsem del trabajo
         $sql_idsem = "SELECT idsem FROM trab WHERE idtrab = {$idtrab}";
         $result_idsem = luis($this->conn, $sql_idsem);
@@ -369,9 +558,103 @@ class CargaModel
         if (!$porcentajeValido) {
             throw new Exception('La suma de porcentajes no puede exceder 100%');
         }
-        
-        $sql = "exec sp_editar_trabindiv {$codigox}, {$idtrab}, '{$vacti_editar}', '{$vdacti_editar}', '{$vimporta_editar}', '{$vmedida_editar}', {$vcant_editar}, {$vhoras_editar}, {$vcalif_editar}, '{$vmeta_editar}', '{$vdatebox_editar}', '{$vdatebox2_editar}', {$vporcentaje_editar}";
-        $this->execute_query($sql);
+
+        try {
+            // Preparar parámetros con escape adecuado y manejo de null
+            $vacti_editar_safe = $vacti_editar !== null ? str_replace("'", "''", $vacti_editar) : '';
+            $vdacti_editar_safe = $vdacti_editar !== null ? str_replace("'", "''", $vdacti_editar) : '';
+            $vimporta_editar_safe = $vimporta_editar !== null ? str_replace("'", "''", $vimporta_editar) : '';
+            $vmedida_editar_safe = $vmedida_editar !== null ? str_replace("'", "''", $vmedida_editar) : '';
+            $vmeta_editar_safe = $vmeta_editar !== null ? str_replace("'", "''", $vmeta_editar) : '';
+            $vdatebox_editar_safe = $vdatebox_editar !== null ? $vdatebox_editar : '';
+            $vdatebox2_editar_safe = $vdatebox2_editar !== null ? $vdatebox2_editar : '';
+            $vtipo_actividad_editar_safe = $vtipo_actividad_editar !== null ? str_replace("'", "''", $vtipo_actividad_editar) : '';
+            $vdetalle_actividad_editar_safe = $vdetalle_actividad_editar !== null ? str_replace("'", "''", $vdetalle_actividad_editar) : '';
+            $vdependencia_editar_safe = $vdependencia_editar !== null ? str_replace("'", "''", $vdependencia_editar) : '';
+
+            // Log detallado de parámetros enviados al procedimiento
+            $parametrosLog = [
+                'codigox' => $codigox,
+                'idtrab' => $idtrab,
+                'vacti_editar' => $vacti_editar,
+                'vdacti_editar' => $vdacti_editar,
+                'vimporta_editar' => $vimporta_editar,
+                'vmedida_editar' => $vmedida_editar,
+                'vcant_editar' => $vcant_editar,
+                'vhoras_editar' => $vhoras_editar,
+                'vcalif_editar' => $vcalif_editar,
+                'vmeta_editar' => $vmeta_editar,
+                'vdatebox_editar' => $vdatebox_editar,
+                'vdatebox2_editar' => $vdatebox2_editar,
+                'vporcentaje_editar' => $vporcentaje_editar,
+                'vtipo_actividad_editar' => $vtipo_actividad_editar,
+                'vdetalle_actividad_editar' => $vdetalle_actividad_editar,
+                'vdependencia_editar' => $vdependencia_editar
+            ];
+
+            // Log detallado usando el sistema de error_logger.php
+            $timestamp = date('Y-m-d H:i:s');
+            $logMessage1 = sprintf(
+                "[%s] EDITAR TRABAJO - Parámetros originales enviados: %s\n" . str_repeat('-', 80) . "\n",
+                $timestamp,
+                json_encode($parametrosLog, JSON_UNESCAPED_UNICODE)
+            );
+            writeToLogFile($logMessage1, __FILE__);
+
+            $parametrosProcesadosLog = [
+                'codigox' => $codigox,
+                'idtrab' => $idtrab,
+                'vacti_editar_safe' => $vacti_editar_safe,
+                'vdacti_editar_safe' => $vdacti_editar_safe,
+                'vimporta_editar_safe' => $vimporta_editar_safe,
+                'vmedida_editar_safe' => $vmedida_editar_safe,
+                'vcant_editar' => $vcant_editar,
+                'vhoras_editar' => $vhoras_editar,
+                'vcalif_editar' => $vcalif_editar,
+                'vmeta_editar_safe' => $vmeta_editar_safe,
+                'vdatebox_editar_safe' => $vdatebox_editar_safe,
+                'vdatebox2_editar_safe' => $vdatebox2_editar_safe,
+                'vporcentaje_editar' => $vporcentaje_editar,
+                'vtipo_actividad_editar_safe' => $vtipo_actividad_editar_safe,
+                'vdetalle_actividad_editar_safe' => $vdetalle_actividad_editar_safe,
+                'vdependencia_editar_safe' => $vdependencia_editar_safe
+            ];
+
+            $logMessage2 = sprintf(
+                "[%s] EDITAR TRABAJO - Parámetros procesados para SQL: %s\n" . str_repeat('-', 80) . "\n",
+                $timestamp,
+                json_encode($parametrosProcesadosLog, JSON_UNESCAPED_UNICODE)
+            );
+            writeToLogFile($logMessage2, __FILE__);
+
+            $sql = "exec sp_editar_trabindiv {$codigox}, {$idtrab}, '{$vacti_editar_safe}', '{$vdacti_editar_safe}', '{$vimporta_editar_safe}', '{$vmedida_editar_safe}', {$vcant_editar}, {$vhoras_editar}, {$vcalif_editar}, '{$vmeta_editar_safe}', '{$vdatebox_editar_safe}', '{$vdatebox2_editar_safe}', {$vporcentaje_editar}, '{$vtipo_actividad_editar_safe}', '{$vdetalle_actividad_editar_safe}', '{$vdependencia_editar_safe}'";
+
+            $logMessage3 = sprintf(
+                "[%s] EDITAR TRABAJO - SQL completo a ejecutar: %s\n" . str_repeat('-', 80) . "\n",
+                $timestamp,
+                $sql
+            );
+            writeToLogFile($logMessage3, __FILE__);
+
+            $this->execute_query($sql);
+
+            $logMessage4 = sprintf(
+                "[%s] EDITAR TRABAJO - SQL ejecutado exitosamente para idtrab: %s\n" . str_repeat('-', 80) . "\n",
+                $timestamp,
+                $idtrab
+            );
+            writeToLogFile($logMessage4, __FILE__);
+        } catch (Exception $e) {
+            $timestamp = date('Y-m-d H:i:s');
+            $errorMessage = sprintf(
+                "[%s] EDITAR TRABAJO - ERROR al ejecutar: %s | SQL: %s\n" . str_repeat('-', 80) . "\n",
+                $timestamp,
+                $e->getMessage(),
+                (isset($sql) ? $sql : 'No generado')
+            );
+            writeToLogFile($errorMessage, __FILE__);
+            throw new Exception('Error al ejecutar el procedimiento almacenado sp_editar_trabindiv: ' . $e->getMessage());
+        }
     }
     
     public function finalizarTrabajo($idtrab, $idsem, $codigo, $estado)
@@ -599,6 +882,8 @@ class CargaModel
                         t.horas,
                         t.fecha_inicio,
                         t.fecha_fin,
+                        t.dependencia,
+                        t.detalle_actividad,
                         CASE WHEN t.actividad LIKE '%teoria%' OR t.actividad LIKE '%practica%' THEN 'Lectiva' ELSE 'No Lectiva' END as clasificacion
                     FROM trab t
                     WHERE t.idsem = {$idsem}";
@@ -644,9 +929,11 @@ class CargaModel
             $sheet->setCellValue('B1', 'Código');
             $sheet->setCellValue('C1', 'Actividad');
             $sheet->setCellValue('D1', 'Horas');
-            $sheet->setCellValue('E1', 'Clasificación');
-            $sheet->setCellValue('F1', 'Fecha Inicio');
-            $sheet->setCellValue('G1', 'Fecha Fin');
+            $sheet->setCellValue('E1', 'Dependencia');
+            $sheet->setCellValue('F1', 'Detalle Actividad');
+            $sheet->setCellValue('G1', 'Clasificación');
+            $sheet->setCellValue('H1', 'Fecha Inicio');
+            $sheet->setCellValue('I1', 'Fecha Fin');
             $row = 2;
             while ($row_data = fetchrow($data, -1)) {
                 $sheet->setCellValue('A'.$row, isset($row_data[0]) ? $row_data[0] : '');
@@ -654,8 +941,10 @@ class CargaModel
                 $sheet->setCellValue('C'.$row, isset($row_data[2]) ? $row_data[2] : '');
                 $sheet->setCellValue('D'.$row, isset($row_data[3]) ? $row_data[3] : '');
                 $sheet->setCellValue('E'.$row, isset($row_data[6]) ? $row_data[6] : '');
-                $sheet->setCellValue('F'.$row, isset($row_data[4]) ? $row_data[4] : '');
-                $sheet->setCellValue('G'.$row, isset($row_data[5]) ? $row_data[5] : '');
+                $sheet->setCellValue('F'.$row, isset($row_data[7]) ? $row_data[7] : '');
+                $sheet->setCellValue('G'.$row, isset($row_data[8]) ? $row_data[8] : '');
+                $sheet->setCellValue('H'.$row, isset($row_data[4]) ? $row_data[4] : '');
+                $sheet->setCellValue('I'.$row, isset($row_data[5]) ? $row_data[5] : '');
                 $row++;
             }
             cierra($data);
@@ -711,6 +1000,58 @@ class CargaModel
         </script>";
         $button = "<button onclick='downloadReport()'>Descargar Reporte Excel</button>";
         return $js . $button;
+    }
+
+
+    // Método para insertar datos de carga desde Excel
+    public function insertarCargaDesdeExcel($excelData, $codigoUsuario, $codper)
+    {
+        try {
+            foreach ($excelData as $row) {
+                // Columnas del Excel en este orden:
+                // 0: idcurso, 1: idsem, 2: seccion, 3: iddepe, 4: FechaExamen, 5: FechaAlternativa
+
+                $idcurso = isset($row[0]) ? trim($row[0]) : null;
+                $idsem = isset($row[1]) ? trim($row[1]) : null;
+                $seccion = isset($row[2]) ? trim($row[2]) : '';
+                $iddepe = isset($row[3]) ? trim($row[3]) : null;
+                $fechaExamen = isset($row[4]) ? trim($row[4]) : null;
+                $fechaAlternativa = isset($row[5]) ? trim($row[5]) : null;
+
+                // Valores por defecto
+                $activo = 1;
+                $usuario = $codigoUsuario;
+                $hora = date('Y-m-d H:i:s');
+                $codigo = $codigoUsuario; // Usar codigoUsuario como codigo
+
+                // Validar campos requeridos
+                if (!$idcurso || !$idsem || !$codigoUsuario) {
+                    continue; // Saltar filas incompletas
+                }
+
+                // Escapar valores para prevenir SQL injection
+                $seccion = str_replace("'", "''", $seccion);
+                
+                // Construir la consulta SQL con manejo correcto de NULL y comillas
+                $sql = "INSERT INTO dbo.carga (codper, idcurso, idsem, seccion, iddepe, codigo, [Fecha Examen], [Fecha Alternativa], activo, usuario, hora)
+                        VALUES ($codper, $idcurso, $idsem, '$seccion', " .
+                        ($iddepe ? $iddepe : "NULL") . ", $codigo, " .
+                        ($fechaExamen ? "'$fechaExamen'" : "NULL") . ", " .
+                        ($fechaAlternativa ? "'$fechaAlternativa'" : "NULL") . ", $activo, '$usuario', '$hora')";
+
+                $this->execute_query($sql);
+            }
+        } catch (Exception $e) {
+            // Registrar el error para depuración usando el sistema personalizado
+            $timestamp = date('Y-m-d H:i:s');
+            $excelErrorMessage = sprintf(
+                "[%s] INSERTAR CARGA DESDE EXCEL - Error: %s\n" . str_repeat('-', 80) . "\n",
+                $timestamp,
+                $e->getMessage()
+            );
+            writeToLogFile($excelErrorMessage, __FILE__);
+            throw new Exception('Error al insertar datos de carga: ' . $e->getMessage());
+        }
     }
 
     // Método para obtener autoridades académicas del docente

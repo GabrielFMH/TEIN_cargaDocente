@@ -1,0 +1,21 @@
+[2025-09-12 09:09:49] E_WARNING: mssql_free_result() expects parameter 1 to be resource, boolean given on line 173
+Context: {"resultx":true,"host":"crom12","usuario":"sisintranet","pass":"N3utr1n0s","data":"upT","rutase":"E:\/php\/upt","port":1433,"dbx":1,"tiempo":12000,"padtime":240000,"semi":["Quadro","Tigera","Sadnes"]}
+--------------------------------------------------------------------------------
+[2025-09-12 09:09:49] E_WARNING: mssql_free_result() expects parameter 1 to be resource, boolean given on line 173
+Context: {"resultx":true,"host":"crom12","usuario":"sisintranet","pass":"N3utr1n0s","data":"upT","rutase":"E:\/php\/upt","port":1433,"dbx":1,"tiempo":12000,"padtime":240000,"semi":["Quadro","Tigera","Sadnes"]}
+--------------------------------------------------------------------------------
+[2025-09-12 09:09:49] E_WARNING: mssql_free_result() expects parameter 1 to be resource, boolean given on line 173
+Context: {"resultx":true,"host":"crom12","usuario":"sisintranet","pass":"N3utr1n0s","data":"upT","rutase":"E:\/php\/upt","port":1433,"dbx":1,"tiempo":12000,"padtime":240000,"semi":["Quadro","Tigera","Sadnes"]}
+--------------------------------------------------------------------------------
+[2025-09-12 09:09:49] E_WARNING: mssql_data_seek(): Bad row offset on line 86
+Context: 
+--------------------------------------------------------------------------------
+[2025-09-12 09:09:49] E_WARNING: mssql_close() expects parameter 1 to be resource, null given on line 189
+Context: {"conn":null,"host":"crom12","usuario":"sisintranet","pass":"N3utr1n0s","data":"upT","rutase":"E:\/php\/upt","port":1433,"dbx":1,"tiempo":12000,"padtime":240000,"semi":["Quadro","Tigera","Sadnes"]}
+--------------------------------------------------------------------------------
+[2025-09-12 09:09:49] E_WARNING: mssql_free_result() expects parameter 1 to be resource, boolean given on line 173
+Context: {"resultx":true,"host":"crom12","usuario":"sisintranet","pass":"N3utr1n0s","data":"upT","rutase":"E:\/php\/upt","port":1433,"dbx":1,"tiempo":12000,"padtime":240000,"semi":["Quadro","Tigera","Sadnes"]}
+--------------------------------------------------------------------------------
+[2025-09-12 09:09:49] E_WARNING: require(config.php): failed to open stream: No such file or directory on line 182
+Context: 
+--------------------------------------------------------------------------------
