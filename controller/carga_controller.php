@@ -455,7 +455,7 @@ class CargaController
                     $vmedida = isset($_POST['vmedida']) && !empty($_POST['vmedida']) ? $_POST['vmedida'] : '';
                     $vcant = isset($_POST['vcant']) && is_numeric($_POST['vcant']) ? (int)$_POST['vcant'] : 0;
                     $vhoras = isset($_POST['vhoras']) && is_numeric($_POST['vhoras']) ? (float)$_POST['vhoras'] : 0;
-                    $vcalif = isset($_POST['vcalif']) && is_numeric($_POST['vcalif']) ? (float)$_POST['vcalif'] : 0;
+                    $vcalif = isset($_POST['vporcentaje']) && is_numeric($_POST['vporcentaje']) ? (float)$_POST['vporcentaje'] : 0;
                     $vmeta = isset($_POST['vmeta']) && !empty($_POST['vmeta']) ? $_POST['vmeta'] : '';
                     $datebox = isset($_POST['datebox']) && !empty($_POST['datebox']) ? $_POST['datebox'] : '';
                     $datebox2 = isset($_POST['datebox2']) && !empty($_POST['datebox2']) ? $_POST['datebox2'] : '';
