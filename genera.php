@@ -2654,9 +2654,18 @@ function individual($codigo, $sex, $codper, $busca, $file_php,$sem)
 
 	// $ValidarTiempoCompleto =$row[6];   //naty
 	// echo $ValidarTiempoCompleto;
+
+	//Gabo
+	$nombreEscuelaPorDefecto = '';
+
 	$ko=1;
 	while ($row=fetchrow_fichamatricula($result,-1))
 	{
+		//Gabo
+		if (empty($nombreEscuelaPorDefecto)) { // <--- 2. GUARDA EL VALOR SOLO UNA VEZ
+			$nombreEscuelaPorDefecto = $row[1];
+		}
+		
 		$ValidarTiempoCompleto = $row[6];
 	// echo $ValidarTiempoCompleto;
 	// //echo 'hola';
@@ -4123,13 +4132,23 @@ function actualizarDetalleActividad() {
 			echo '</select>';
 			echo '</td>';
 
-			// Cuarto Combobox - Dependencia (NUEVO)
+
+
+			// Cuarto Combobox - Dependencia (NUEVO) 
 			echo '<td>';
 			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Dependencia:</font>';
 			echo '<select size="1" name="vdependencia" style="width: 100%;">';
 			echo '<option value="">-- Seleccione --</option>';
+
 			foreach ($dependencias as $dependencia) {
-				echo '<option value="' . htmlspecialchars($dependencia) . '">' . htmlspecialchars($dependencia) . '</option>';
+				$selected = '';
+				// CORRECCIÓN: Comparamos si el nombre de la escuela está CONTENIDO
+				// en la opción de dependencia, en lugar de una comparación exacta.
+				// Usamos la variable que guardamos al principio.
+				if (!empty($nombreEscuelaPorDefecto) && strpos($dependencia, $nombreEscuelaPorDefecto) !== false) {
+					$selected = ' selected="selected"';
+				}
+				echo '<option value="' . htmlspecialchars($dependencia) . '"' . $selected . '>' . htmlspecialchars($dependencia) . '</option>';
 			}
 			echo '</select>';
 			echo '</td>';
