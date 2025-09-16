@@ -77,9 +77,16 @@ class CargaModel
         $sql = "SELECT ISNULL(MAX(numero_informe), 0) + 1 FROM trab WHERE codigo = {$codigo} AND idsem = {$idsem}";
         $result = luis($this->conn, $sql);
         $row = fetchrow($result, -1);
-        $numero = $row[0];
+        if (!$row) {
+            $numero = 1;
+        } else {
+            $numero = $row[0];
+            if ($numero === null) {
+                $numero = 1;
+            }
+        }
         cierra($result);
-        return $numero;
+        return (int)$numero;
     }
 
     // Método para validar carga horaria según reglas (20h TC, 40h totales, etc.)
@@ -383,6 +390,7 @@ class CargaModel
             'vmeta' => $vmeta !== null ? str_replace("'", "''", $vmeta) : '',
             'vdatebox' => $vdatebox,
             'vdatebox2' => $vdatebox2,
+            'porcentaje' => $vcalif,  // porcentaje is vcalif
             'viddepe' => $viddepe,
             'vcanthoras' => $vcanthoras,
             'idsem' => $idsem,
@@ -391,7 +399,7 @@ class CargaModel
             'vdependencia' => $vdependencia !== null ? str_replace("'", "''", $vdependencia) : ''
         );
 
-        $sql = "exec trabiagregar_v2 {$params['codigox']}, '{$params['vacti']}', '{$params['vdacti']}', '{$params['vimporta']}', '{$params['vmedida']}', {$params['vcant']}, {$params['vhoras']}, {$params['vcalif']}, '{$params['vmeta']}', '{$params['vdatebox']}', '{$params['vdatebox2']}', '{$params['viddepe']}', '{$params['vcanthoras']}', {$params['idsem']}, '{$params['vtipo_actividad']}', '{$params['vdetalle_actividad']}', '{$params['vdependencia']}'";
+        $sql = "exec trabiagregar_v2 {$params['codigox']}, '{$params['vacti']}', '{$params['vdacti']}', '{$params['vimporta']}', '{$params['vmedida']}', {$params['vcant']}, {$params['vhoras']}, {$params['vcalif']}, '{$params['vmeta']}', '{$params['vdatebox']}', '{$params['vdatebox2']}', {$params['porcentaje']}, {$params['viddepe']}, {$params['vcanthoras']}, {$params['idsem']}, '{$params['vtipo_actividad']}', '{$params['vdetalle_actividad']}', '{$params['vdependencia']}'";
 
         // Log detallado usando el sistema personalizado
         $timestamp = date('Y-m-d H:i:s');
@@ -455,6 +463,7 @@ class CargaModel
                 'meta' => $vmeta !== null ? str_replace("'", "''", $vmeta) : '',
                 'fecha_inicio' => $vdatebox,
                 'fecha_fin' => $vdatebox2,
+                'porcentaje' => $vcalif,
                 'iddepe' => $viddepe,
                 'numero_informe' => $numero_informe,
                 'idsem' => $idsem,
@@ -463,8 +472,8 @@ class CargaModel
                 'dependencia' => $vdependencia !== null ? str_replace("'", "''", $vdependencia) : ''
             );
 
-            $sql = "INSERT INTO trab (codigo, actividad, dactividad, importancia, medida, cant, horas, calif, meta, fecha_inicio, fecha_fin, iddepe, numero_informe, idsem, tipo_actividad, detalle_actividad, dependencia, fecha_creacion, califNuevo)
-                    VALUES ({$params['codigo']}, '{$params['actividad']}', '{$params['dactividad']}', '{$params['importancia']}', '{$params['medida']}', {$params['cant']}, {$params['horas']}, {$params['calif']}, '{$params['meta']}', '{$params['fecha_inicio']}', '{$params['fecha_fin']}', '{$params['iddepe']}', {$params['numero_informe']}, {$params['idsem']}, '{$params['tipo_actividad']}', '{$params['detalle_actividad']}', '{$params['dependencia']}', GETDATE(), (10+{$params['calif']}))";
+            $sql = "INSERT INTO trab (codigo, idsem, actividad, dactividad, importancia, medida, cant, horas, calif, meta, otros, fecha_inicio, fecha_fin, porcentaje, iddepe, numero_informe, estado, fecha_registro, fecha_modificacion, califNuevo, tipo_actividad, detalle_actividad, dependencia)
+                    VALUES ({$params['codigo']}, {$params['idsem']}, '{$params['actividad']}', '{$params['dactividad']}', '{$params['importancia']}', '{$params['medida']}', {$params['cant']}, {$params['horas']}, {$params['calif']}, '{$params['meta']}', '', '{$params['fecha_inicio']}', '{$params['fecha_fin']}', {$params['porcentaje']}, {$params['iddepe']}, {$params['numero_informe']}, 1, GETDATE(), GETDATE(), (10+{$params['calif']}), '{$params['tipo_actividad']}', '{$params['detalle_actividad']}', '{$params['dependencia']}')";
 
             // Log de inserción directa usando el sistema personalizado
             $timestamp = date('Y-m-d H:i:s');
