@@ -1,4 +1,5 @@
 <?php
+require_once 'error_logger.php';
 include('genera_formularios_carga.php');
 function huella($codper)
 {
@@ -3229,7 +3230,29 @@ echo '<input class="btns" type=button onClick="javascript:msjregistrar()" value=
 
 
 /*HASTA AQUI CAPTURO LA FECHA EN QUE INICIA EL SEMESTRE SEMESTRE*/
+//by gabo
 $sql="exec trabixdoc_v2 ".$codigo.",".$sem;
+//$sql = "SELECT * FROM dbo.trab WHERE codigo = '" . $codigo . "' AND idsem = " . $sem . " ORDER BY idtrab ASC";
+
+// Si codigo e idsem son números
+// Asegurar tipos
+
+
+
+
+
+
+// Por ejemplo
+
+// Validar que sean números enteros
+
+
+
+
+
+
+
+
 //echo $sql;
 $da=0;
 $hn=0;
@@ -3441,7 +3464,7 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 			echo '<td colspan="1" bgcolor="'.$tcol.'"><font size="1">Actividad '.$da.' '.$editable.'</font></td>';
 		echo '</tr>';
 		
-		// Fila 1: Comboboxes de Actividad, Tipo, Detalle y Dependencia
+				// Fila 1: Comboboxes de Actividad, Tipo, Detalle y Dependencia
 		echo '<tr>';
 			echo '<td><font size="1">';
 				// Actividad
@@ -3473,6 +3496,15 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 				echo '&nbsp;&nbsp;&nbsp;<font style="background-color: #F2F8FC" face="Verdana" size="1">Detalle:</font>';
 				echo ' <select size="1" id="detalle_actividad_editar'.$da.'" name="vdetalle_editar'.$da.'" title="Seleccionar el detalle de actividad">';
 				echo '<option value="">-- Seleccione --</option>';
+				
+				// --- INICIO CAMBIO 1: Mostrar y seleccionar el Detalle de Actividad guardado ---
+				// Se asume que la lista completa de opciones se carga con JavaScript.
+				// Esta línea asegura que el valor guardado ($row[18]) aparezca seleccionado al cargar la página.
+				if (!empty($row[18])) {
+					echo '<option value="' . htmlspecialchars($row[18]) . '" selected>' . htmlspecialchars($row[18]) . '</option>';
+				}
+				// --- FIN CAMBIO 1 ---
+				
 				echo '</select>';
 				
 				// Dependencia
@@ -3480,7 +3512,10 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 				echo ' <select size="1" name="vdependencia_editar'.$da.'">';
 				echo '<option value="">-- Seleccione --</option>';
 				foreach ($dependencias as $dependencia) {
-					echo '<option value="' . htmlspecialchars($dependencia) . '">' . htmlspecialchars($dependencia) . '</option>';
+					// --- INICIO CAMBIO 2: Lógica para preseleccionar la Dependencia guardada ($row[17]) ---
+					$selected_dependencia = ($row[17] == $dependencia) ? "selected" : "";
+					echo '<option value="' . htmlspecialchars($dependencia) . '" ' . $selected_dependencia . '>' . htmlspecialchars($dependencia) . '</option>';
+					// --- FIN CAMBIO 2 ---
 				}
 				echo '</select>';
 			echo '</font></td>';
@@ -4394,7 +4429,11 @@ cierra($resulta);
 
 
 /*ESTE PROCEDIMIENTO SE ENCARGA DE GENERAR  EL Detalle de Carga No Lectiva DEL ARCHIVO estadistica.php, AL REALIZAR CLIC SOBRE EL GIF METAS*/
+//by gabo
 $sql="exec trabixdoc_v2 ".$codigo.",".$sem;
+//$sql = "SELECT * FROM dbo.trab WHERE codigo = $codigo AND idsem = $sem ORDER BY idtrab ASC";
+
+
 //echo $sql;
 $hn=0;
 
@@ -6042,13 +6081,73 @@ $hn=0;
 /*AGREGUE ESTO PARA LA SUMA DE LOS PORCENTAJES*/
 $suma_porcentaje = 0;
 /*HASTA AQUI SUMA DE LOS PORCENTAJES*/
+$suma_horas_lectivas = 0;
+
+// Log the SQL query
+$timestamp = date('Y-m-d H:i:s');
+$logMessage = sprintf(
+    "[%s] EJECUTANDO CONSULTA TRABIXDOC_V2 - SQL: %s\n" . str_repeat('-', 80) . "\n",
+    $timestamp,
+    $sql
+);
+writeToLogFile($logMessage, __FILE__);
+
+// Display log if debug mode is enabled
+if (isset($_GET['debug'])) {
+    echo "<div style='background-color: #f0f0f0; border: 1px solid #ccc; padding: 10px; margin: 10px; font-family: monospace; font-size: 12px;'>";
+    echo "<strong>DEBUG LOG - TRABIXDOC_V2:</strong><br>";
+    echo nl2br(htmlspecialchars($logMessage));
+    echo "</div>";
+}
+
+// Execute query
 $result=luis($conn, $sql);
+
+// Log the number of rows
+$numRows = numrow($result);
+$logMessage2 = sprintf(
+    "[%s] RESULTADO CONSULTA TRABIXDOC_V2 - Número de filas: %d\n" . str_repeat('-', 80) . "\n",
+    $timestamp,
+    $numRows
+);
+writeToLogFile($logMessage2, __FILE__);
+
+// Display log if debug mode is enabled
+if (isset($_GET['debug'])) {
+    echo "<div style='background-color: #f0f0f0; border: 1px solid #ccc; padding: 10px; margin: 10px; font-family: monospace; font-size: 12px;'>";
+    echo "<strong>DEBUG LOG - RESULTADO TRABIXDOC_V2:</strong><br>";
+    echo nl2br(htmlspecialchars($logMessage2));
+    echo "</div>";
+}
+
+// Maybe log some sample rows
+if ($numRows > 0) {
+    fetchrow($result, 0, true); // Reset cursor
+    $sampleRow = fetchrow($result, -1);
+    $logMessage3 = sprintf(
+        "[%s] MUESTRA FILA TRABIXDOC_V2 - %s\n" . str_repeat('-', 80) . "\n",
+        $timestamp,
+        json_encode($sampleRow)
+    );
+    writeToLogFile($logMessage3, __FILE__);
+
+    // Display log if debug mode is enabled
+    if (isset($_GET['debug'])) {
+        echo "<div style='background-color: #f0f0f0; border: 1px solid #ccc; padding: 10px; margin: 10px; font-family: monospace; font-size: 12px;'>";
+        echo "<strong>DEBUG LOG - MUESTRA FILA TRABIXDOC_V2:</strong><br>";
+        echo nl2br(htmlspecialchars($logMessage3));
+        echo "</div>";
+    }
+}
 $bandera=1;
 /*genera la tabla de Detalle de Carga No Lectiva*/
 while ($row=fetchrow($result,-1))
 {
-	$da++;
-	$suma_porcentaje = $suma_porcentaje+$row[11];
+    $da++;
+    $suma_porcentaje = $suma_porcentaje+$row[11];
+    if ($row[7] == 1) {
+        $suma_horas_lectivas += $row[6];
+    }
 	/*if ($ton==1){$tcol='#FFE1FF';$ton=0;}else{$tcol='#E6CDB5';$ton=1;}*/
 	if ($ton==1){$tcol='DEEBE5';$ton=0;}else{$tcol='#DBEAF5';$ton=1;}
 	if ($row[6]>0){$hn=$hn+$row[6];}
@@ -6438,7 +6537,7 @@ echo '</font>';
 		if ($estado>0)
 		{
 
-			echo '<INPUT TYPE="text" class="ftexto" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2" value="'.$row[6].'">';
+			echo '<INPUT TYPE="text" class="ftexto" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2" value="'.$row[6].'" onblur="if(document.getElementsByName(\'vcalif_editar'.$da.'\')[0].value == \'1\') checkLectiva(\'1\', \'vhoras_editar'.$da.'\', \''.$row[7].'\', \''.$row[6].'\')">';
 
 		}
 		else
@@ -6454,7 +6553,7 @@ echo '</font>';
 	/*echo '<td>';*/
 			//echo'&nbsp;&nbsp;&nbsp;<font size="1">';
 			echo'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font size="1">';
-			echo '<select size="1" name="vcalif_editar'.$da.'" title="Seleccionar el item relacionado con la actividad">';
+			echo '<select size="1" name="vcalif_editar'.$da.'" title="Seleccionar el item relacionado con la actividad" onchange="checkLectiva(this.value, \'vhoras_editar'.$da.'\', \''.$row[7].'\', \''.$row[6].'\')">';
 
 	switch ($row[7])
 	{
@@ -6597,28 +6696,48 @@ if ($hn!=0) {echo '<table border="1" cellspacing="0" ><tr><td width="150" colspa
 			$horas_laborales = $row[4];
 		}
 		cierra($result);
-
-// if($hl+$hn>40)
-if($hl+$hn>$horas_laborales)
-{
-	// $mensaje =' No debe de sobrepasar las 40 horas' ;
-	$mensaje =' No debe de sobrepasar las '.$horas_laborales.' horas' ;
-}
-else
-{
-	// if($hl+$hn<40)
-	if($hl+$hn<$horas_laborales)
-	{
-		// $mensaje =' Debe de completar las 40 horas' ;
-		$mensaje =' Debe de completar las '.$horas_laborales.' horas' ;
-	}
-	else
-	{
-		// $mensaje =' Cumple con las 40 horas' ;
-		$mensaje =' Cumple con las '.$horas_laborales.' horas' ;
-	}
-}
-$total_horas=$hl+$hn;
+	
+		$limite_lectivas = $horas_laborales * 0.25;
+		echo '<script type="text/javascript">';
+		echo 'var sumaLectivas = ' . $suma_horas_lectivas . ';';
+		echo 'var limiteLectivas = ' . $limite_lectivas . ';';
+		echo 'var currentCalifAdd = "0";';
+		echo 'function checkLectiva(value, horasName, currentCalif, currentHoras) {';
+		echo '    if (value == "1") {';
+		echo '        var horas = document.getElementsByName(horasName)[0].value || currentHoras;';
+		echo '        var adjustedSuma = sumaLectivas;';
+		echo '        if (currentCalif == "1") {';
+		echo '            adjustedSuma -= parseInt(currentHoras);';
+		echo '        }';
+		echo '        if (parseInt(horas) + adjustedSuma > limiteLectivas) {';
+		echo '            alert("La suma de horas de actividades lectivas no puede superar el 25% de las horas totales del docente (" + limiteLectivas + " horas).");';
+		echo '            document.getElementsByName(horasName)[0].focus();';
+		echo '        }';
+		echo '    }';
+		echo '}';
+		echo '</script>';
+	
+	// if($hl+$hn>40)
+		if($hl+$hn>$horas_laborales)
+		{
+			// $mensaje =' No debe de sobrepasar las 40 horas' ;
+			$mensaje =' No debe de sobrepasar las '.$horas_laborales.' horas' ;
+		}
+		else
+		{
+			// if($hl+$hn<40)
+			if($hl+$hn<$horas_laborales)
+			{
+				// $mensaje =' Debe de completar las 40 horas' ;
+				$mensaje =' Debe de completar las '.$horas_laborales.' horas' ;
+			}
+			else
+			{
+				// $mensaje =' Cumple con las 40 horas' ;
+				$mensaje =' Cumple con las '.$horas_laborales.' horas' ;
+			}
+		}
+		$total_horas=$hl+$hn;
 /*HASTA AQUI DETERMINO SI EL TOTAL DE HORAS SOBREPASA LAS 40 HORAS */
 /* ESTAS TABLAS SON LA LEYENDE PARA CADA  CALIFICACION QUE SE LE ASIGANA AL Detalle de Carga No Lectiva*/
 echo '<table><tr><td width="150" colspan="2" align="right"><b><font size="2">Total Hrs.&nbsp;</font></b></td><td width="600" colspan="3"><b><font size="2">'.($hl+$hn).' -'.$mensaje.'</font></b></td></tr></table>';
@@ -6782,7 +6901,7 @@ echo '<table border="0" cellspacing="2" bgcolor="#CCE6FF">';
 	/*echo '<td >';*/
 	echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
 	echo '<font size="1">';
-	echo '<select size="1" name="vcalif" title="Seleccionar el item relacionado con la actividad">';
+	echo '<select size="1" name="vcalif" title="Seleccionar el item relacionado con la actividad" onchange="checkLectiva(this.value, \'vhoras\', \'0\', \'0\')">';
    	echo '<option value="1">Enseñanza</option>';
 	echo '<option value="2">Investigación</option>';
 	echo '<option value="9">Responsabilidad Social</option>';
