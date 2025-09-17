@@ -465,6 +465,19 @@ class CargaController
                     $vdetalle = isset($_POST['vdetalle']) && !empty($_POST['vdetalle']) ? $_POST['vdetalle'] : null;
                     $vdependencia = isset($_POST['vdependencia']) && !empty($_POST['vdependencia']) ? $_POST['vdependencia'] : null;
 
+
+                    // --- INICIO DE LA NUEVA VALIDACIÓN(gabo) ---
+                    // Solo validamos si la actividad que se va a agregar es de tipo 'Lectiva'
+                    if ($vtipo === 'Lectiva') {
+                        $validacionLectiva = $this->model->validacionHorasLectivas(
+                            $_SESSION['codigox'],
+                            $idsem,
+                            $vhoras
+                        );
+                        if (!$validacionLectiva['valido']) {
+                            throw new Exception($validacionLectiva['mensaje']);
+                        }
+                    }
                     $this->model->agregarTrabajo(
                         $_SESSION['codigox'],
                         $vacti,
