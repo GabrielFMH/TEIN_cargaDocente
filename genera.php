@@ -3496,7 +3496,7 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 					$tipos = ["Gestion" => "Gestión"];
 				} else { $tipos = []; }
 				foreach($tipos as $valor => $texto) {
-					$selected = ($row[15] == $valor) ? "selected" : "";
+					$selected = ($row[19] == $valor) ? "selected" : ""; //15
 					echo '<option value="'.$valor.'" '.$selected.'>'.$texto.'</option>';
 				}
 				echo '</select>';
@@ -3512,8 +3512,6 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 				if (!empty($row[18])) {
 					echo '<option value="' . htmlspecialchars($row[18]) . '" selected>' . htmlspecialchars($row[18]) . '</option>';
 				}
-				// --- FIN CAMBIO 1 ---
-				
 				echo '</select>';
 				
 				// Dependencia
