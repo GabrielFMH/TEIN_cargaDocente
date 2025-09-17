@@ -73,33 +73,36 @@ class CargaModel
 
     public function validacionHorasLectivas($codigo, $idsem, $horasNuevas, $idtrabExcluir = null)
     {
+        // Obtener el límite dinámico de horas lectivas del cuadro de detalle
+        $limiteHorasLectivas = $this->getTotalHorasLectivasCuadro($codigo, $idsem);
+
         // El tipo de actividad 'Lectiva' se identifica por el valor 'Lectiva' en la columna tipo_actividad.
-        $sql = "SELECT ISNULL(SUM(horas), 0) as total_horas_lectivas 
-                FROM trab 
-                WHERE codigo = {$codigo} 
-                AND idsem = {$idsem} 
+        $sql = "SELECT ISNULL(SUM(horas), 0) as total_horas_lectivas
+                FROM trab
+                WHERE codigo = {$codigo}
+                AND idsem = {$idsem}
                 AND tipo_actividad = 'Lectiva'";
 
         // Si estamos editando una actividad, la excluimos de la suma total actual.
         if ($idtrabExcluir) {
             $sql .= " AND idtrab != {$idtrabExcluir}";
         }
-        
+
         $result = luis($this->conn, $sql);
         $row = fetchrow($result, -1);
         $totalActual = (float)$row[0];
         cierra($result);
-        
+
         $respuesta = [
             'valido' => true,
             'mensaje' => ''
         ];
 
-        if (($totalActual + $horasNuevas) > 10) {
+        if (($totalActual + $horasNuevas) > $limiteHorasLectivas) {
             $respuesta['valido'] = false;
-            $respuesta['mensaje'] = 'La suma de horas para actividades de tipo "Lectiva" no puede superar las 10 horas semanales. Horas actuales: ' . $totalActual;
+            $respuesta['mensaje'] = 'La suma de horas para actividades de tipo "Lectiva" no puede superar las ' . $limiteHorasLectivas . ' horas semanales. Horas actuales: ' . $totalActual;
         }
-        
+
         return $respuesta;
     }
 
@@ -1101,6 +1104,28 @@ class CargaModel
             writeToLogFile($excelErrorMessage, __FILE__);
             throw new Exception('Error al insertar datos de carga: ' . $e->getMessage());
         }
+    }
+
+    // Método para obtener el total de horas lectivas del cuadro de detalle de carga lectiva
+    public function getTotalHorasLectivasCuadro($codigo, $idsem)
+    {
+        $hl = 0;
+        $CursoSeleccionado = null;
+
+        $sql = "exec trabindividual_v4 {$codigo}, {$idsem}";
+        $result = luis($this->conn, $sql);
+
+        while ($row = fetchrow($result, -1)) {
+            if ($CursoSeleccionado != $row[5]) {
+                if ($row[4] > 0) {
+                    $hl += $row[4];
+                }
+                $CursoSeleccionado = $row[5];
+            }
+        }
+        cierra($result);
+
+        return $hl/4;
     }
 
     // Método para obtener autoridades académicas del docente
