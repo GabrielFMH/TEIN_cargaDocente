@@ -69,6 +69,11 @@ PivotData AS (
         AVG(PorcentajeActividad) AS PorcentajeActividad,
         MAX(UltimoAnio) AS UltimoAnio,
 
+        -- MODIFICACIÓN 1: Se añaden los promedios de los nuevos campos necesarios para el cálculo.
+        AVG(ValorEjecutadoPO) AS AvgValorEjecutadoPO,
+        AVG(ValorAuxiliar01PlanOperativo) AS AvgValorAuxiliar01PlanOperativo,
+        AVG(ValorInicialPE) AS AvgValorInicialPE,
+
         -- Metas por año
         AVG(CASE WHEN Anio = 2023 THEN MetaAsignada END) AS [2023_MA],
         AVG(CASE WHEN Anio = 2023 THEN ME_Ajustado END) AS [2023_ME],
@@ -93,10 +98,9 @@ Calculos AS (
         CAST(CASE WHEN [2026_MA] <> 0 THEN ([2026_ME] * 100.0 / [2026_MA]) ELSE NULL END AS DECIMAL(18,2)) AS [2026_%PPO],
         CAST(CASE WHEN [2027_MA] <> 0 THEN ([2027_ME] * 100.0 / [2027_MA]) ELSE NULL END AS DECIMAL(18,2)) AS [2027_%PPO],
 
-        -- INICIO DE MODIFICACIÓN: Lógica condicional para [T MA] (MTPE)
+        -- TOTALES con lógica condicional
         CAST(
             CASE
-                -- Si es tipo 1, solo toma el valor de MA del último año para el total.
                 WHEN IdPto_ClasificacionIndicador = 1 THEN
                     CASE
                         WHEN UltimoAnio = 2023 THEN ISNULL([2023_MA], 0)
@@ -106,13 +110,9 @@ Calculos AS (
                         WHEN UltimoAnio = 2027 THEN ISNULL([2027_MA], 0)
                         ELSE 0
                     END
-                -- Para los otros tipos (0 y 2), suma los MA de todos los años.
                 ELSE ISNULL([2023_MA],0) + ISNULL([2024_MA],0) + ISNULL([2025_MA],0) + ISNULL([2026_MA],0) + ISNULL([2027_MA],0)
             END
         AS DECIMAL(18,2)) AS [T MA],
-        -- FIN DE MODIFICACIÓN
-
-        -- TOTAL ME (la lógica ya es correcta desde el ajuste anterior)
         CAST(
             CASE
                 WHEN IdPto_ClasificacionIndicador = 1 AND UltimoAnio = 2023 THEN ISNULL([2023_ME], 0)
@@ -129,15 +129,44 @@ Calculos AS (
 CalculoFinal AS (
     SELECT 
         *,
-        -- Los cálculos de %PPE ahora usan el [T MA] correcto que fue calculado en el paso anterior.
+        -- %PPE (Este cálculo ahora usa el T MA condicional)
         CAST(CASE WHEN [T MA] <> 0 THEN ([2023_ME] * 100.0 / [T MA]) ELSE NULL END AS DECIMAL(18,2)) AS [2023_%PPE],
         CAST(CASE WHEN [T MA] <> 0 THEN ([2024_ME] * 100.0 / [T MA]) ELSE NULL END AS DECIMAL(18,2)) AS [2024_%PPE],
         CAST(CASE WHEN [T MA] <> 0 THEN ([2025_ME] * 100.0 / [T MA]) ELSE NULL END AS DECIMAL(18,2)) AS [2025_%PPE],
         CAST(CASE WHEN [T MA] <> 0 THEN ([2026_ME] * 100.0 / [T MA]) ELSE NULL END AS DECIMAL(18,2)) AS [2026_%PPE],
         CAST(CASE WHEN [T MA] <> 0 THEN ([2027_ME] * 100.0 / [T MA]) ELSE NULL END AS DECIMAL(18,2)) AS [2027_%PPE],
         
-        -- El %TOTAL también usará automáticamente el [T MA] correcto.
-        CAST(CASE WHEN [T MA] <> 0 THEN ([T ME] * 100.0 / [T MA]) ELSE NULL END AS DECIMAL(18,2)) AS [% TOTAL]
+        -- MODIFICACIÓN 2: Se implementa la lógica de negocio personalizada para [% TOTAL].
+        CAST(
+            CASE
+                -- Caso especial para el tipo de indicador 2
+                WHEN IdPto_ClasificacionIndicador = 2 THEN
+                    CASE
+                        -- Grupo 1: 623, 627, 629, 662
+                        WHEN IdIndicador IN (623, 627, 629, 662) THEN
+                            CASE 
+                                WHEN ISNULL(AvgValorAuxiliar01PlanOperativo, 0) <> 0 
+                                THEN (AvgValorEjecutadoPO * 100.0 / AvgValorAuxiliar01PlanOperativo)
+                                ELSE NULL 
+                            END
+                        -- Grupo 2: 624, 625, 628
+                        WHEN IdIndicador IN (624, 625, 628) THEN
+                            CASE 
+                                WHEN ISNULL(AvgValorInicialPE, 0) <> 0 
+                                THEN ((AvgValorEjecutadoPO - AvgValorInicialPE) * 100.0 / AvgValorInicialPE)
+                                ELSE NULL 
+                            END
+                        -- Grupo 3: 626
+                        WHEN IdIndicador = 626 THEN AvgValorInicialPE
+                        -- Para cualquier otro indicador de tipo 2, usa la lógica estándar.
+                        ELSE 
+                            CASE WHEN [T MA] <> 0 THEN ([T ME] * 100.0 / [T MA]) ELSE NULL END
+                    END
+                -- Para todos los demás tipos de indicador (0, 1), usa la lógica estándar.
+                ELSE
+                    CASE WHEN [T MA] <> 0 THEN ([T ME] * 100.0 / [T MA]) ELSE NULL END
+            END
+        AS DECIMAL(18,2)) AS [% TOTAL]
     FROM Calculos
 )
 
