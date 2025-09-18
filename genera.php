@@ -3123,10 +3123,44 @@ while ($row=fetchrow($result_semestre,-1))
 	if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
 	{
 
+		// --- INICIO: Filtro por Mes --- GABO
+	echo '<div style="margin: 20px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">';
+	echo '<label for="filtro_mes_individual" style="font-weight: bold; margin-right: 10px;">Filtrar Actividades por Mes:</label>';
+	echo '<select id="filtro_mes_individual" name="filtro_mes_individual" style="padding: 5px;">';
+	echo '<option value="">-- Mostrar Todas --</option>';
+
+	// Definir los meses según el semestre
+	$meses_semestre = [];
+	switch ($semestre_acti) {
+		case '2025-I':
+			$meses_semestre = ['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio'];
+			break;
+		case '2025-II':
+			$meses_semestre = ['Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+			break;
+		case '2025-REC':
+			$meses_semestre = ['Diciembre', 'Enero', 'Febrero'];
+			break;
+		case '2025-INT':
+			$meses_semestre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+			break;
+		default:
+			// Si no coincide con ningún semestre conocido, mostrar todos los meses
+			$meses_semestre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+	}
+
+	foreach ($meses_semestre as $mes) {
+		echo '<option value="' . $mes . '">' . $mes . '</option>';
+	}
+
+	echo '</select>';
+	echo '</div>';
+	// --- FIN: Filtro por Mes ---
+
 		if($a>0)
 		{
 			echo'
-<div id="main">
+<div id="main" style="text-align: left;">
 	<div id="list3">
 				<div>
 					<div class="title"><img src="imagenes/flecha_trab.png" width=12 height=12 border=0></a> &nbsp;&nbsp;&nbsp; Registre el avance de su actividad - <font size="1"><blink> Haga clic izquierdo aqui para visualizar el formulario.</blink></font></div>
@@ -3231,6 +3265,75 @@ echo '<input class="btns" type=button onClick="javascript:msjregistrar()" value=
 </div>
 					';
 		}
+
+		// --- INICIO: JavaScript para Filtro por Mes ---GABO
+			?>
+			<script>
+			document.getElementById('filtro_mes_individual').addEventListener('change', function() {
+				const mesSeleccionado = this.value;
+				const todasLasTablas = document.querySelectorAll('table[border="1"][cellspacing="0"][width="100%"]');
+
+				todasLasTablas.forEach(tabla => {
+					// Verificar si la tabla es de "Detalle de Carga No Lectiva"
+					const esTablaDeActividad = tabla.querySelector('td[colspan="1"] > font[size="1"]') && 
+											tabla.querySelector('td[colspan="1"] > font[size="1"]').textContent.includes('Actividad');
+
+					if (esTablaDeActividad) {
+						// Obtener las fechas de la fila que contiene los inputs de fecha
+						const filaFechas = tabla.querySelector('input[name^="dateboxx"]');
+						if (filaFechas) {
+							const fechaInicioInput = tabla.querySelector('input[name^="dateboxx"]');
+							const fechaFinInput = tabla.querySelector('input[name^="dateboxx2"]');
+
+							if (fechaInicioInput && fechaFinInput) {
+								const fechaInicio = fechaInicioInput.value;
+								const fechaFin = fechaFinInput.value;
+
+								if (mesSeleccionado === "") {
+									// Mostrar todas si no hay filtro
+									tabla.style.display = '';
+								} else {
+									// Convertir el nombre del mes a número
+									const mesNumero = obtenerNumeroMes(mesSeleccionado);
+
+									// Verificar si el mes seleccionado está dentro del rango de fechas
+									const estaEnRango = estaMesEnRango(fechaInicio, fechaFin, mesNumero);
+
+									if (estaEnRango) {
+										tabla.style.display = '';
+									} else {
+										tabla.style.display = 'none';
+									}
+								}
+							}
+						}
+					}
+				});
+			});
+
+				function obtenerNumeroMes(nombreMes) {
+					const meses = {
+						'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4, 'Mayo': 5, 'Junio': 6,
+						'Julio': 7, 'Agosto': 8, 'Setiembre': 9, 'Octubre': 10, 'Noviembre': 11, 'Diciembre': 12
+					};
+					return meses[nombreMes] || 0;
+				}
+
+				function estaMesEnRango(fechaInicioStr, fechaFinStr, mesBuscado) {
+					// Convertir SOLO la fecha de inicio de string "dd/mm/yyyy" a objeto Date
+					const partesInicio = fechaInicioStr.split('/');
+					const fechaInicio = new Date(partesInicio[2], partesInicio[1] - 1, partesInicio[0]);
+
+					// Obtener el mes de la fecha de inicio (enero = 0, por eso sumamos 1)
+					const mesInicio = fechaInicio.getMonth() + 1;
+
+					// Devolver true solo si el mes de inicio coincide con el mes buscado
+					return mesInicio === mesBuscado;
+				}
+				</script>
+				<?php
+				// --- FIN: JavaScript para Filtro por Mes ---
+
 		noconex($conn);
 		/*FIN ACORDEON*/
 
