@@ -2627,7 +2627,7 @@ function matricula($codigo, $sex)
 
 
 /*AGREGUE LA VARIALBE $file_php PARA DETERMINAR SI ESTOY EN EL ARCHIVO estadistica.php O buscab.php*/
-function individual($codigo, $sex, $codper, $busca, $file_php,$sem)
+function individual($codigo, $sex, $codper, $busca, $file_php,$sem,$semestre_denominacion = "NO_DEFINIDO")//GABO AGREGO SEMESTRE DENOMINACION
 {
 
 	//Validacion Plani --Yoel 23-10-18
@@ -3124,6 +3124,13 @@ while ($row=fetchrow($result_semestre,-1))
 	{
 
 		// --- INICIO: Filtro por Mes --- GABO
+		// --- DEPURACIÓN: Mostrar el valor de $semestre_acti ---
+		echo '<div style="padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; margin: 10px 0; font-family: monospace; font-size: 14px; color: #155724;">';
+    echo '<strong>INFO:</strong> Valor de $semestre_denominacion recibido = <code>' . htmlspecialchars($semestre_denominacion) . '</code>';
+    echo '</div>';
+
+$semestre_acti = $semestre;
+		// --- FIN DEPURACIÓN ---
 	echo '<div style="margin: 20px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">';
 	echo '<label for="filtro_mes_individual" style="font-weight: bold; margin-right: 10px;">Filtrar Actividades por Mes:</label>';
 	echo '<select id="filtro_mes_individual" name="filtro_mes_individual" style="padding: 5px;">';
@@ -3532,29 +3539,16 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 <?php
 /*EN LA CARGA DEL DOCENTE*/
 
-	// Array con las opciones para el nuevo combobox
-	$dependencias = [
-		"AC : Área de Contabilidad", "AGPH : Área de Gestión del Potencial Humano", "AIR : Área de Impresiones y Reproducciones",
-		"AIM : Área de Infraestructura y Mantenimiento", "AL : Área de Logística", "AS : Área de Servicios", "AT : Area de Tesorería",
-		"CP : Carrera de Psicología", "DFECH : Decanato de la Fac. de Educación, Cs. Comunic. y Hum.", "DFAU : Decanato de la Facultad de Arquitectura y Urbanismo",
-		"DFCS : Decanato de la Facultad de Cs. De la Salud", "DFCE : Decanato de la Facultad de Cs. Empresariales", "DFDP : Decanato de la Facultad de Derecho y Cs. Políticas",
-		"DFI : Decanato de la Facultad de Ingeniería", "DGA : Direccion General de Administración", "EP-D : Escuela de Postgrado - Dirección",
-		"EPA : Escuela Profesional de Administración", "EPANI : Escuela Profesional de Administración de Negocios Internacionales",
-		"EPATH : Escuela Profesional de Administración Turístico-Hotelera", "EPAQ : Escuela Profesional de Arquitectura", "EPCF : Escuela Profesional de Ciencias Contables y Financieras",
-		"ECC : Escuela Profesional de Ciencias de la Comunicación", "EPD : Escuela Profesional de Derecho", "EPE : Escuela Profesional de Economía",
-		"EPEM : Escuela Profesional de Economía y Microfinanzas", "EPED : Escuela Profesional de Educación", "EPIA : Escuela Profesional de Ingeniería Agroindustrial",
-		"EPIAM : Escuela Profesional de Ingeniería Ambiental", "EPIC : Escuela Profesional de Ingeniería Civil", "EPICM : Escuela Profesional de Ingeniería Comercial",
-		"EPIS : Escuela Profesional de Ingeniería de Sistemas", "EPIE : Escuela Profesional de Ingeniería Electrónica", "EPII : Escuela Profesional de Ingeniería Industrial",
-		"EPMH : Escuela Profesional de Medicina Humana", "EPO : Escuela Profesional de Odontología", "EPTM : Escuela Profesional de Tecnología Médica",
-		"IEVV : Institución Educativa Verdad y Vida", "LCAP : Laboratorio Clínico y Anatomía Patológica", "OAM : Oficina de Admisión y Marketing",
-		"OAJL : Oficina de Asesoría Jurídica y Legal", "OBSA : Oficina de Biblioteca y Servicios Académicos", "OBUN : Oficina de Bienestar Universitario",
-		"OCI : Oficina de Control Interno", "ODU : Oficina de Defensoria Universitaria", "OEV : Oficina de Educación Virtual", "OGC : Oficina de Gestión de la Calidad",
-		"OGPAD : Oficina de Gestión de Procesos Académicos y Docencia", "OII : Oficina de Imagen Institucional", "OPD : Oficina de Planeamiento y Desarrollo",
-		"OPITT : Oficina de Procesos de Investigación y Transferencia Tecnológica", "ORNI : Oficina de Relaciones Nacionales e Internacionales",
-		"ORSU : Oficina de Responsabilidad Social Universitaria", "OTI : Oficina de Tecnologías de la Información", "RUPT : Radio UPT",
-		"R : Rectorado", "SG : Secretaría General", "TFYR : Terapia Física y Rehabilitación", "VRA : Vice Rectorado Académico",
-		"VRI : Vice Rectorado de Investigación"
-	];
+	// Array con las opciones para el nuevo combobox GABO
+	// Realizar la consulta para obtener las dependencias desde la base de datos
+		$sql_dependencias = "SELECT DISTINCT descrip FROM depe AS d WHERE d.estado = 0 ORDER BY descrip";
+		$result_dependencias = luis($conn, $sql_dependencias); // Asumiendo que $conn está disponible y es válido
+		$dependencias = array(); // Inicializar array vacío
+
+		while ($row_dep = fetchrow($result_dependencias, -1)) {
+			$dependencias[] = $row_dep[0]; // Añadir cada descripción al array
+		}
+		cierra($result_dependencias);
 
 	echo '<table border="1" cellspacing="0" width="100%">';
 		if ($bandera==1){echo '<tr><th colspan="1">Detalle de Carga No Lectiva</th></tr>';}
@@ -4134,68 +4128,19 @@ function actualizarDetalleActividad() {
 </script>
 
 <?php
-		// Array con las opciones para el nuevo combobox
-		$dependencias = [
-			"AC : Área de Contabilidad",
-			"AGPH : Área de Gestión del Potencial Humano",
-			"AIR : Área de Impresiones y Reproducciones",
-			"AIM : Área de Infraestructura y Mantenimiento",
-			"AL : Área de Logística",
-			"AS : Área de Servicios",
-			"AT : Area de Tesorería",
-			"CP : Carrera de Psicología",
-			"DFECH : Decanato de la Fac. de Educación, Cs. Comunic. y Hum.",
-			"DFAU : Decanato de la Facultad de Arquitectura y Urbanismo",
-			"DFCS : Decanato de la Facultad de Cs. De la Salud",
-			"DFCE : Decanato de la Facultad de Cs. Empresariales",
-			"DFDP : Decanato de la Facultad de Derecho y Cs. Políticas",
-			"DFI : Decanato de la Facultad de Ingeniería",
-			"DGA : Direccion General de Administración",
-			"EP-D : Escuela de Postgrado - Dirección",
-			"EPA : Escuela Profesional de Administración",
-			"EPANI : Escuela Profesional de Administración de Negocios Internacionales",
-			"EPATH : Escuela Profesional de Administración Turístico-Hotelera",
-			"EPAQ : Escuela Profesional de Arquitectura",
-			"EPCF : Escuela Profesional de Ciencias Contables y Financieras",
-			"ECC : Escuela Profesional de Ciencias de la Comunicación",
-			"EPD : Escuela Profesional de Derecho",
-			"EPE : Escuela Profesional de Economía",
-			"EPEM : Escuela Profesional de Economía y Microfinanzas",
-			"EPED : Escuela Profesional de Educación",
-			"EPIA : Escuela Profesional de Ingeniería Agroindustrial",
-			"EPIAM : Escuela Profesional de Ingeniería Ambiental",
-			"EPIC : Escuela Profesional de Ingeniería Civil",
-			"EPICM : Escuela Profesional de Ingeniería Comercial",
-			"EPIS : Escuela Profesional de Ingeniería de Sistemas",
-			"EPIE : Escuela Profesional de Ingeniería Electrónica",
-			"EPII : Escuela Profesional de Ingeniería Industrial",
-			"EPMH : Escuela Profesional de Medicina Humana",
-			"EPO : Escuela Profesional de Odontología",
-			"EPTM : Escuela Profesional de Tecnología Médica",
-			"IEVV : Institución Educativa Verdad y Vida",
-			"LCAP : Laboratorio Clínico y Anatomía Patológica",
-			"OAM : Oficina de Admisión y Marketing",
-			"OAJL : Oficina de Asesoría Jurídica y Legal",
-			"OBSA : Oficina de Biblioteca y Servicios Académicos",
-			"OBUN : Oficina de Bienestar Universitario",
-			"OCI : Oficina de Control Interno",
-			"ODU : Oficina de Defensoria Universitaria",
-			"OEV : Oficina de Educación Virtual",
-			"OGC : Oficina de Gestión de la Calidad",
-			"OGPAD : Oficina de Gestión de Procesos Académicos y Docencia",
-			"OII : Oficina de Imagen Institucional",
-			"OPD : Oficina de Planeamiento y Desarrollo",
-			"OPITT : Oficina de Procesos de Investigación y Transferencia Tecnológica",
-			"ORNI : Oficina de Relaciones Nacionales e Internacionales",
-			"ORSU : Oficina de Responsabilidad Social Universitaria",
-			"OTI : Oficina de Tecnologías de la Información",
-			"RUPT : Radio UPT",
-			"R : Rectorado",
-			"SG : Secretaría General",
-			"TFYR : Terapia Física y Rehabilitación",
-			"VRA : Vice Rectorado Académico",
-			"VRI : Vice Rectorado de Investigación"
-		];
+		// --- INICIO CAMBIO: Reemplazar array manual con consulta SQL GABO ---
+		// $dependencias = [ "AC : Área de Contabilidad", "AGPH : Área de Gestión del Potencial Humano", ... ]; // <-- Línea original a eliminar
+
+		// Realizar la consulta para obtener las dependencias desde la base de datos
+		$sql_dependencias = "SELECT DISTINCT descrip FROM depe AS d WHERE d.estado = 0 ORDER BY descrip";
+		$result_dependencias = luis($conn, $sql_dependencias); // Asumiendo que $conn está disponible y es válido
+		$dependencias = array(); // Inicializar array vacío
+
+		while ($row_dep = fetchrow($result_dependencias, -1)) {
+			$dependencias[] = $row_dep[0]; // Añadir cada descripción al array
+		}
+		cierra($result_dependencias);
+		// --- FIN CAMBIO ---
 
 		// Se define el número de columnas para que los colspan sean consistentes
 		$num_columnas = 4;
@@ -5627,7 +5572,7 @@ function view_trab_informe_vice($idtrab,$sex)
 
 /*Gary - Añadi esta funcion para mostrar los horarios por el semestre seleccionado en el PIT para el modulo de estadistica varia en el procedimiento*/
 /*AGREGUE LA VARIALBE $file_php PARA DETERMINAR SI ESTOY EN EL ARCHIVO estadistica.php O buscab.php*/
-function individualPIT($codigo, $sex, $codper, $busca, $file_php,$sem)
+function individualPIT($codigo, $sex, $codper, $busca, $file_php,$sem,$semestre_denominacion = "NO_DEFINIDO") //GABO AÑADIO SEMESTRE_DENOMINACION
 /*function individual($codigo, $sex, $codper, $busca);*/
 {
 $conn=conex();
