@@ -2944,6 +2944,27 @@ echo '<tr><td colspan="3" align="Center"><b><font size="2">Total de Hrs Lectivas
 echo '</table><br>';
 cierra($resulta);
 
+// --- INICIO: Calcular Total Horas Lectivas Cuadro ---GABO
+$total_horas_lectivas_cuadro = 0;
+$CursoSeleccionado = null;
+
+$sql_hl_cuadro = "exec trabindividual_v4 " . $codigo . ", " . $sem;
+$result_hl_cuadro = luis($conn, $sql_hl_cuadro);
+
+while ($row_hl = fetchrow($result_hl_cuadro, -1)) {
+    if ($CursoSeleccionado != $row_hl[5]) {
+        if ($row_hl[4] > 0) {
+            $total_horas_lectivas_cuadro += $row_hl[4];
+        }
+        $CursoSeleccionado = $row_hl[5];
+    }
+}
+cierra($result_hl_cuadro);
+
+// Aplicar la fórmula: total / 4 y redondear
+$total_horas_lectivas_cuadro = round($total_horas_lectivas_cuadro / 4);
+// --- FIN: Calcular Total Horas Lectivas Cuadro ---
+
 /*FORMULARIO DE CARGA NO LECTIVA , LISTA TODAS LAS ACTIVIDADES INGRESADAS EN EL FORMULARIO*/
 
 if ($busca==0)
@@ -3125,9 +3146,9 @@ while ($row=fetchrow($result_semestre,-1))
 
 		// --- INICIO: Filtro por Mes --- GABO
 		// --- DEPURACIÓN: Mostrar el valor de $semestre_acti ---
-		echo '<div style="padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; margin: 10px 0; font-family: monospace; font-size: 14px; color: #155724;">';
-    echo '<strong>INFO:</strong> Valor de $semestre_denominacion recibido = <code>' . htmlspecialchars($semestre_denominacion) . '</code>';
-    echo '</div>';
+	//	echo '<div style="padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; margin: 10px 0; font-family: monospace; font-size: 14px; color: #155724;">';
+    //echo '<strong>INFO:</strong> Valor de $semestre_denominacion recibido = <code>' . htmlspecialchars($semestre_denominacion) . '</code>';
+    //echo '</div>';
 
 $semestre_acti = $semestre;
 		// --- FIN DEPURACIÓN ---
@@ -3896,18 +3917,49 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 	/*FIN*/
 
 
-
+	//GABO
 	$conn=conex();
-	// $sql="select (select descrip from depe where depe.iddepe=individual.iddepe) as facultad, nomcondicion, nomnivcateg, dedicacion, nrohoras, nombres, titulo, titulo2, titulo3, (select descrip from depe where depe.iddepe=idesc) as escuela from individual where codper=".$codper;
 	$sql="usp_Pit_ObtenerDatosResumen ".$codper.", ".$sem;
-	// echo $sql;
 	$result=luis($conn, $sql);
-	// $horas_laborales = 0;
+	$horas_laborales = 0;
+	$dedicacion = ''; // Variable para almacenar la dedicación
 	while ($row=fetchrow($result,-1))
 	{
 		$horas_laborales = $row[4];
+		$dedicacion = trim($row[3]); // Asumiendo que la dedicación está en la posición 3
 	}
 	cierra($result);
+
+	// Calcular el total de horas (lectivas + no lectivas)
+	$total_horas = $hl + $hn;
+
+	// Aplicar validaciones según la dedicación
+	if ($dedicacion === 'DE') { // Dedicación Exclusiva
+		if ($total_horas < 40) {
+			$mensaje = ' No cumple con el mínimo de 40 horas requeridas para dedicación exclusiva';
+		} else {
+			$mensaje = ' Cumple con el mínimo de 40 horas requeridas para dedicación exclusiva';
+		}
+	} elseif ($dedicacion === 'TP') { // Tiempo Parcial
+		if ($total_horas >= 40) {
+			$mensaje = ' No debe alcanzar o superar las 40 horas por ser tiempo parcial';
+		} else {
+			$mensaje = ' Cumple con el límite de menos de 40 horas por ser tiempo parcial';
+		}
+	} else { // Para TC (Tiempo Completo) u otros, usar la lógica original basada en $horas_laborales
+		if ($total_horas > $horas_laborales) {
+			$mensaje = ' No debe de sobrepasar las ' . $horas_laborales . ' horas';
+		} else {
+			if ($total_horas < $horas_laborales) {
+				$mensaje = ' Debe de completar las ' . $horas_laborales . ' horas';
+			} else {
+				$mensaje = ' Cumple con las ' . $horas_laborales . ' horas';
+			}
+		}
+	}
+
+
+
 	if ($vah>0)
 	{
 		// if($hl+$hn>40)
@@ -4053,21 +4105,19 @@ function actualizarTipoActividad() {
     });
 }
 
+
+//Gabo
 function actualizarDetalleActividad() {
     var tipo = document.getElementById("tipo_actividad").value;
     var detalleSelect = document.getElementById("detalle_actividad");
-
     // Limpiar opciones existentes
     detalleSelect.innerHTML = "";
-    
     // Agregar opción por defecto
     var defaultOption = document.createElement("option");
     defaultOption.value = "";
     defaultOption.text = "-- Seleccione --";
     detalleSelect.appendChild(defaultOption);
-
     var opciones = [];
-
     switch(tipo) {
         case "Lectiva":
             opciones = [{ value: "Preparacion_Clase", text: "Preparación de clase y evaluación" }];
@@ -4117,13 +4167,21 @@ function actualizarDetalleActividad() {
             ];
             break;
     }
-
     opciones.forEach(function(opcion) {
         var opt = document.createElement("option");
         opt.value = opcion.value;
         opt.text = opcion.text;
         detalleSelect.appendChild(opt);
     });
+
+    // --- INICIO CAMBIO: Autorellenar horas si es Lectiva ---
+    if (tipo === "Lectiva") {
+        document.querySelector('input[name="vhoras"]').value = <?php echo $total_horas_lectivas_cuadro; ?>;
+    } else {
+        // Opcional: Limpiar el campo si se cambia de tipo
+        // document.querySelector('input[name="vhoras"]').value = '';
+    }
+    // --- FIN CAMBIO ---
 }
 </script>
 
@@ -6752,15 +6810,48 @@ if ($hn!=0) {echo '<table border="1" cellspacing="0" ><tr><td width="150" colspa
 /*La suma de las variables ($hl+$hn) es = al Total Hrs.*/
 
 /*DETERMINO SI EL TOTAL DE HORAS SOBREPASA LAS 40 HORAS Y MUESTRA MENSAJE*/
+
+		// Obtener el total de horas laborales y la dedicación	
+		//GABO
 		$conn=conex();
-		// $sql="select (select descrip from depe where depe.iddepe=individual.iddepe) as facultad, nomcondicion, nomnivcateg, dedicacion, nrohoras, nombres, titulo, titulo2, titulo3, (select descrip from depe where depe.iddepe=idesc) as escuela from individual where codper=".$codper;
 		$sql="usp_Pit_ObtenerDatosResumen ".$codper.", ".$sem;
 		$result=luis($conn, $sql);
+		$horas_laborales = 0;
+		$dedicacion = ''; // Variable para almacenar la dedicación
 		while ($row=fetchrow($result,-1))
 		{
 			$horas_laborales = $row[4];
+			$dedicacion = trim($row[3]); // Asumiendo que la dedicación está en la posición 3
 		}
 		cierra($result);
+
+		// Calcular el total de horas (lectivas + no lectivas)
+		$total_horas = $hl + $hn;
+
+		// Aplicar validaciones según la dedicación
+		if ($dedicacion === 'DE') { // Dedicación Exclusiva
+			if ($total_horas < 40) {
+				$mensaje = ' No cumple con el mínimo de 40 horas requeridas para dedicación exclusiva';
+			} else {
+				$mensaje = ' Cumple con el mínimo de 40 horas requeridas para dedicación exclusiva';
+			}
+		} elseif ($dedicacion === 'TP') { // Tiempo Parcial
+			if ($total_horas >= 40) {
+				$mensaje = ' No debe alcanzar o superar las 40 horas por ser tiempo parcial';
+			} else {
+				$mensaje = ' Cumple con el límite de menos de 40 horas por ser tiempo parcial';
+			}
+		} else { // Para TC (Tiempo Completo) u otros, usar la lógica original basada en $horas_laborales
+			if ($total_horas > $horas_laborales) {
+				$mensaje = ' No debe de sobrepasar las ' . $horas_laborales . ' horas';
+			} else {
+				if ($total_horas < $horas_laborales) {
+					$mensaje = ' Debe de completar las ' . $horas_laborales . ' horas';
+				} else {
+					$mensaje = ' Cumple con las ' . $horas_laborales . ' horas';
+				}
+			}
+		}
 	
 		$limite_lectivas = $horas_laborales * 0.25;
 		echo '<script type="text/javascript">';
