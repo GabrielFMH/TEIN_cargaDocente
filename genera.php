@@ -2967,407 +2967,422 @@ $total_horas_lectivas_cuadro = round($total_horas_lectivas_cuadro / 4);
 
 /*FORMULARIO DE CARGA NO LECTIVA , LISTA TODAS LAS ACTIVIDADES INGRESADAS EN EL FORMULARIO*/
 
-if ($busca==0)
-{
-echo '<FORM METHOD="POST" ACTION="carga.php?tr=1&sesion='.$sex.'&x='.$sem.'" name="frmindiv">';
-}
+// MODIFICACIÓN 1: Se cambia la condición para que incluya a los docentes TP y DE.
+// Esto permite que el código de cálculo de horas y el resumen final se ejecuten para ellos.
+if ($ValidarTiempoCompleto == "TC" || $ValidarTiempoCompleto == "TP" || $ValidarTiempoCompleto == "DE") {
 
-if ($busca==1)
-{
-echo '<FORM METHOD="POST" ACTION="buscab.php?tr=1&sesion='.$sex.'" name="frmindiv">';
-}
-
-if ($ValidarTiempoCompleto == "TC") {
-	  //naty 27-08-2019
-// echo 'hola';
-// echo $ValidarTiempoCompleto ;
-$sql_semestre="exec trabisem ".$codigo;
-//echo $sql_semestre;
-
-$result_semestre=luis($conn, $sql_semestre);
-while ($row=fetchrow($result_semestre,-1))
-{
-	$semestre=$row[1];
-	$fecha=$row[2];
-	$codigoo=$row[3];
-
-}
-	/*LA VARIABLE $semestre_acti INDICA EL SEMESTRE AL QUE CORRESPONDE LA ACTIVIDAD*/
-	$semestre_acti=$semestre;
-	$fecha_semestre=$fecha;
-	/*LA VARIABLE $codigo_acti INDICA EL CODIGO AL QUE CORRESPONDE LA ACTIVIDAD*/
-	$codigo_acti=$codigoo;
-
-	echo'<input type="hidden" name="mcodigo" value="'.$codigo_acti.'">';
-	echo'<input type="hidden" name="msemestre" value="'.$semestre_acti.'">';
-
-	cierra($result_semestre);
-
-
-	$fecha_final =$fecha_semestre; /*LA VARIABLE $fecha_final ES = LA FECHA EN QUE INCIA EL SEMESTRE*/
-	/*$fecha_final ='10/10/2011';*/
-	$dia = substr( $fecha_final, 0, 2 );
-	$mes=  substr( $fecha_final, 3, 2 );
-	$ano=  substr( $fecha_final, 6, 4 );
-
-	date_default_timezone_set('America/Lima');
-	$dia_actual=date("d/m/Y");
-	$fecha_inical =$dia_actual;
-	/*$fecha_inical ='01/10/2011';*/
-	$dia2 = substr( $fecha_inical, 0, 2 );
-	$mes2=  substr( $fecha_inical, 3, 2 );
-	$ano2=  substr( $fecha_inical, 6, 4 );
-
-	/*calculo timestam de las fecha FECHA FINAL*/
-	$timestamp1 = mktime(0,0,0,$mes,$dia,$ano);		/*FECHA FINAL = FECHA INICIO DEL SEMESTRE*/
-	/*$timestamp2 = mktime(4,12,0,$mes2,$dia2,$ano2);*/	/*FECHA INICIAL = FECHA ACTUAL*/
-	$timestamp2 = mktime(0,0,0,$mes2,$dia2,$ano2);
-
-	/*CALCULO EL NUMERO DE DIAS EN QUE INICIA EL SEMESTRE */
-	$dias_segundos = $timestamp1;
-	/*convierto segundos en días*/
-	$num_dias = $dias_segundos / (60 * 60 * 24);
-	/*obtengo el valor absoulto de los días (quito el posible signo negativo)*/
-	$num_dias = abs($num_dias);
-	/*quito los decimales a los días de diferencia*/
-	$num_dias = floor($num_dias);
-	$num_dias = $num_dias + 1;
-	$dias_semetre=$num_dias+10; /*AGREGO 10 DIAS DE OLGURA PARA DESHABILITAR LOS BOTONES*/
-	/*HASTA AQUI CALCULO EL NUMERO DE DIAS EN QUE INICIA EL SEMESTRE */
-
-	/*CALCULO EL NUMERO DE DIAS ACTUALES  */
-	$dias_segundos2 = $timestamp2;
-	/*convierto segundos en días*/
-	$num_dias2 = $dias_segundos2 / (60 * 60 * 24);
-	/*obtengo el valor absoulto de los días (quito el posible signo negativo)*/
-	$num_dias2 = abs($num_dias2);
-	/*quito los decimales a los días de diferencia*/
-	$num_dias2 = floor($num_dias2);
-	$num_dias2 = $num_dias2 + 1;
-	$dias_avance=$num_dias2; /*LA VARIABLE $dias_avance ES = LA FECHA ACTUAL QUE SERA COMPARADA
-	CON LA CANTIDAD DE DIAS QUE POSEE EL SEMESTRE*/
-	/*HASTA AQUI CALCULO EL NUMERO DE DIAS EN QUE INICIA EL SEMESTRE */
-
-	/*
-	echo'numero de dias de semestre';
-	echo '<br>';
-	echo $num_dias ;
-	echo '<br>';
-	echo'numero de dias de semestre + 10';
-	echo '<br>';
-	echo $num_dias = $num_dias  +10;
-	echo '<br>';
-	echo'numero de dias de actuales';
-	echo '<br>';
-	echo $num_dias2 ;
-	echo '<br>';
-	*/
-
-	/*RADIO BUTONS PARA CAMBIAR DE ESTADO A TODAS LAS ACTIVIDADES*/
-	$codigo_exec=$codigo;
-	$sql="exec trabixdoc_v2 ".$codigo.",".$sem;
-	//echo $sql;
-	$result=luis($conn, $sql);
-		while ($row =fetchrow($result,-1))
+	// MODIFICACIÓN 2: Se envuelve la apertura del FORMULARIO en una condición.
+	// Solo los docentes TC verán los formularios y podrán interactuar con ellos.
+	if ($ValidarTiempoCompleto == "TC") {
+		if ($busca==0)
 		{
-		$idtrab=$row[0];
+		echo '<FORM METHOD="POST" ACTION="carga.php?tr=1&sesion='.$sex.'&x='.$sem.'" name="frmindiv">';
 		}
-		cierra($result);
-		/*noconex($conn);	*/
 
-		if ($idtrab>0)
+		if ($busca==1)
 		{
+		echo '<FORM METHOD="POST" ACTION="buscab.php?tr=1&sesion='.$sex.'" name="frmindiv">';
+		}
+	}
 
-			if($file_php>0)
+	// El siguiente bloque es solo para TC, ya que la condición original se mantiene.
+	if ($ValidarTiempoCompleto == "TC") {
+		  //naty 27-08-2019
+	// echo 'hola';
+	// echo $ValidarTiempoCompleto ;
+	$sql_semestre="exec trabisem ".$codigo;
+	//echo $sql_semestre;
+
+	$result_semestre=luis($conn, $sql_semestre);
+	while ($row=fetchrow($result_semestre,-1))
+	{
+		$semestre=$row[1];
+		$fecha=$row[2];
+		$codigoo=$row[3];
+
+	}
+		/*LA VARIABLE $semestre_acti INDICA EL SEMESTRE AL QUE CORRESPONDE LA ACTIVIDAD*/
+		$semestre_acti=$semestre;
+		$fecha_semestre=$fecha;
+		/*LA VARIABLE $codigo_acti INDICA EL CODIGO AL QUE CORRESPONDE LA ACTIVIDAD*/
+		$codigo_acti=$codigoo;
+
+		echo'<input type="hidden" name="mcodigo" value="'.$codigo_acti.'">';
+		echo'<input type="hidden" name="msemestre" value="'.$semestre_acti.'">';
+
+		cierra($result_semestre);
+
+
+		$fecha_final =$fecha_semestre; /*LA VARIABLE $fecha_final ES = LA FECHA EN QUE INCIA EL SEMESTRE*/
+		/*$fecha_final ='10/10/2011';*/
+		$dia = substr( $fecha_final, 0, 2 );
+		$mes=  substr( $fecha_final, 3, 2 );
+		$ano=  substr( $fecha_final, 6, 4 );
+
+		date_default_timezone_set('America/Lima');
+		$dia_actual=date("d/m/Y");
+		$fecha_inical =$dia_actual;
+		/*$fecha_inical ='01/10/2011';*/
+		$dia2 = substr( $fecha_inical, 0, 2 );
+		$mes2=  substr( $fecha_inical, 3, 2 );
+		$ano2=  substr( $fecha_inical, 6, 4 );
+
+		/*calculo timestam de las fecha FECHA FINAL*/
+		$timestamp1 = mktime(0,0,0,$mes,$dia,$ano);		/*FECHA FINAL = FECHA INICIO DEL SEMESTRE*/
+		/*$timestamp2 = mktime(4,12,0,$mes2,$dia2,$ano2);*/	/*FECHA INICIAL = FECHA ACTUAL*/
+		$timestamp2 = mktime(0,0,0,$mes2,$dia2,$ano2);
+
+		/*CALCULO EL NUMERO DE DIAS EN QUE INICIA EL SEMESTRE */
+		$dias_segundos = $timestamp1;
+		/*convierto segundos en días*/
+		$num_dias = $dias_segundos / (60 * 60 * 24);
+		/*obtengo el valor absoulto de los días (quito el posible signo negativo)*/
+		$num_dias = abs($num_dias);
+		/*quito los decimales a los días de diferencia*/
+		$num_dias = floor($num_dias);
+		$num_dias = $num_dias + 1;
+		$dias_semetre=$num_dias+10; /*AGREGO 10 DIAS DE OLGURA PARA DESHABILITAR LOS BOTONES*/
+		/*HASTA AQUI CALCULO EL NUMERO DE DIAS EN QUE INICIA EL SEMESTRE */
+
+		/*CALCULO EL NUMERO DE DIAS ACTUALES  */
+		$dias_segundos2 = $timestamp2;
+		/*convierto segundos en días*/
+		$num_dias2 = $dias_segundos2 / (60 * 60 * 24);
+		/*obtengo el valor absoulto de los días (quito el posible signo negativo)*/
+		$num_dias2 = abs($num_dias2);
+		/*quito los decimales a los días de diferencia*/
+		$num_dias2 = floor($num_dias2);
+		$num_dias2 = $num_dias2 + 1;
+		$dias_avance=$num_dias2; /*LA VARIABLE $dias_avance ES = LA FECHA ACTUAL QUE SERA COMPARADA
+		CON LA CANTIDAD DE DIAS QUE POSEE EL SEMESTRE*/
+		/*HASTA AQUI CALCULO EL NUMERO DE DIAS EN QUE INICIA EL SEMESTRE */
+
+		/*
+		echo'numero de dias de semestre';
+		echo '<br>';
+		echo $num_dias ;
+		echo '<br>';
+		echo'numero de dias de semestre + 10';
+		echo '<br>';
+		echo $num_dias = $num_dias  +10;
+		echo '<br>';
+		echo'numero de dias de actuales';
+		echo '<br>';
+		echo $num_dias2 ;
+		echo '<br>';
+		*/
+
+		/*RADIO BUTONS PARA CAMBIAR DE ESTADO A TODAS LAS ACTIVIDADES*/
+		$codigo_exec=$codigo;
+		$sql="exec trabixdoc_v2 ".$codigo.",".$sem;
+		//echo $sql;
+		$result=luis($conn, $sql);
+			while ($row =fetchrow($result,-1))
+			{
+			$idtrab=$row[0];
+			}
+			cierra($result);
+			/*noconex($conn);	*/
+
+			if ($idtrab>0)
 			{
 
-				echo '<table border="1" cellspacing="0">';
-				echo '<tr>';
-					echo '<td colspan="1">
-										<font size="3" face="Arial" ><strong>Descargar Guía de Usuario para Director de Escuela</strong>
-										</font>
-					</td>';
-					echo '<td colspan="1">
-						<font size="1" face="Arial">
-								<blink>
-									<a href="documentos/PIT_Docente/GUIA_PIT_DIRECTOR_V2.pdf" target="_blank">
-										<center style="color: red;">( Haga clic aquí )</center>
-									</a>
-								</blink>
-						</font>
-					</td>';
-				echo '</tr>';
-
-
-				//Validacion Plani --Yoel 23-10-18
-				if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
+				if($file_php>0)
 				{
+
+					echo '<table border="1" cellspacing="0">';
 					echo '<tr>';
-					echo '<td colspan="1">
-							<font size="3" face="Arial" ><strong>Habilitar o deshabilitar las Actividades del Detalle de Carga No Lectiva</strong>
-							</font>
+						echo '<td colspan="1">
+											<font size="3" face="Arial" ><strong>Descargar Guía de Usuario para Director de Escuela</strong>
+											</font>
 						</td>';
-					require_once('encripta_pdf.php');
-					echo '<td colspan="1">
+						echo '<td colspan="1">
 							<font size="1" face="Arial">
 									<blink>
-								<a onclick="javascript:window.open(\'habilitar_pit.php?sesion='.$sex.'&codigo='.fn_encriptar($codigo).'&x='.$sem.'\',\'otra\',\'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=nos,width=850,height=400,top=40,left=50\');return false" href="habilitar_pit.php">
-										<center style="color: red;">( Haga clic aquí )</center>
+										<a href="documentos/PIT_Docente/GUIA_PIT_DIRECTOR_V2.pdf" target="_blank">
+											<center style="color: red;">( Haga clic aquí )</center>
+										</a>
 									</blink>
-								</a></font>
+							</font>
 						</td>';
 					echo '</tr>';
-				}//Fin Validacion Plani --Yoel 23-10-18
-
-				echo '</table>';
-				echo'<br>';
 
 
+					//Validacion Plani --Yoel 23-10-18
+					if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
+					{
+						echo '<tr>';
+						echo '<td colspan="1">
+								<font size="3" face="Arial" ><strong>Habilitar o deshabilitar las Actividades del Detalle de Carga No Lectiva</strong>
+								</font>
+							</td>';
+						require_once('encripta_pdf.php');
+						echo '<td colspan="1">
+								<font size="1" face="Arial">
+										<blink>
+									<a onclick="javascript:window.open(\'habilitar_pit.php?sesion='.$sex.'&codigo='.fn_encriptar($codigo).'&x='.$sem.'\',\'otra\',\'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=nos,width=850,height=400,top=40,left=50\');return false" href="habilitar_pit.php">
+											<center style="color: red;">( Haga clic aquí )</center>
+										</blink>
+									</a></font>
+							</td>';
+						echo '</tr>';
+					}//Fin Validacion Plani --Yoel 23-10-18
+
+					echo '</table>';
+					echo'<br>';
+
+
+				}
 			}
-		}
 
-	/*HASTA AQUI SE GENERA LOS RADIO BUTONS */
+		/*HASTA AQUI SE GENERA LOS RADIO BUTONS */
 
-		/*+++ ACORDEON ++*/
+			/*+++ ACORDEON ++*/
 
-		$sql="select COUNT(0) from trab where codigo=".$codigo." and idsem =".$sem;
+			$sql="select COUNT(0) from trab where codigo=".$codigo." and idsem =".$sem;
 
-		$result=luis($conn, $sql);
-		while ($row=fetchrow($result,-1))
+			$result=luis($conn, $sql);
+			while ($row=fetchrow($result,-1))
+			{
+				$da++;
+				$a=$row[0];
+			}
+			/*echo'+++';*/
+
+		//Validacion Plani --Yoel 23-10-18
+		if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
 		{
-			$da++;
-			$a=$row[0];
-		}
-		/*echo'+++';*/
 
-	//Validacion Plani --Yoel 23-10-18
-	if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
-	{
+			// --- INICIO: Filtro por Mes --- GABO
+			// --- DEPURACIÓN: Mostrar el valor de $semestre_acti ---
+		//	echo '<div style="padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; margin: 10px 0; font-family: monospace; font-size: 14px; color: #155724;">';
+		//echo '<strong>INFO:</strong> Valor de $semestre_denominacion recibido = <code>' . htmlspecialchars($semestre_denominacion) . '</code>';
+		//echo '</div>';
 
-		// --- INICIO: Filtro por Mes --- GABO
-		// --- DEPURACIÓN: Mostrar el valor de $semestre_acti ---
-	//	echo '<div style="padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; margin: 10px 0; font-family: monospace; font-size: 14px; color: #155724;">';
-    //echo '<strong>INFO:</strong> Valor de $semestre_denominacion recibido = <code>' . htmlspecialchars($semestre_denominacion) . '</code>';
-    //echo '</div>';
+	$semestre_acti = $semestre;
+			// --- FIN DEPURACIÓN ---
+		echo '<div style="margin: 20px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">';
+		echo '<label for="filtro_mes_individual" style="font-weight: bold; margin-right: 10px;">Filtrar Actividades por Mes:</label>';
+		echo '<select id="filtro_mes_individual" name="filtro_mes_individual" style="padding: 5px;">';
+		echo '<option value="">-- Mostrar Todas --</option>';
 
-$semestre_acti = $semestre;
-		// --- FIN DEPURACIÓN ---
-	echo '<div style="margin: 20px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">';
-	echo '<label for="filtro_mes_individual" style="font-weight: bold; margin-right: 10px;">Filtrar Actividades por Mes:</label>';
-	echo '<select id="filtro_mes_individual" name="filtro_mes_individual" style="padding: 5px;">';
-	echo '<option value="">-- Mostrar Todas --</option>';
-
-	// Definir los meses según el semestre
-	$meses_semestre = [];
-	switch ($semestre_acti) {
-		case '2025-I':
-			$meses_semestre = ['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio'];
-			break;
-		case '2025-II':
-			$meses_semestre = ['Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-			break;
-		case '2025-REC':
-			$meses_semestre = ['Diciembre', 'Enero', 'Febrero'];
-			break;
-		case '2025-INT':
-			$meses_semestre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-			break;
-		default:
-			// Si no coincide con ningún semestre conocido, mostrar todos los meses
-			$meses_semestre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-	}
-
-	foreach ($meses_semestre as $mes) {
-		echo '<option value="' . $mes . '">' . $mes . '</option>';
-	}
-
-	echo '</select>';
-	echo '</div>';
-	// --- FIN: Filtro por Mes ---
-
-		if($a>0)
-		{
-			echo'
-<div id="main" style="text-align: left;">
-	<div id="list3">
-				<div>
-					<div class="title"><img src="imagenes/flecha_trab.png" width=12 height=12 border=0></a> &nbsp;&nbsp;&nbsp; Registre el avance de su actividad - <font size="1"><blink> Haga clic izquierdo aqui para visualizar el formulario.</blink></font></div>
-					<div>
-						<p>';
-
-
-						 /*+++++*/
-						 /*CREO COMBO CON LOS DETALLES DE LAS ACTIVIDADES*/
-
-						$sql="select idtrab, dactividad from trab where codigo=".$codigo." and idsem =".$sem;
-						//echo $sql;
-
-						$result=luis($conn, $sql);
-
-						echo'<font size="1">Seleccione el detalle de su Actividad</font>';
-						echo' &nbsp;&nbsp;&nbsp;&nbsp; ';
-						echo'<select size="1" name="vdactividad_historial" title="Seleccionar el detalle de su actividad">';
-							while ($row=fetchrow($result,-1))
-							{
-								$da++;
-							echo '<option value="'.$row[0].'">'.$row[1].'</option>';
-							}
-						echo '</select>';
-
-						cierra($result);
-						/*noconex($conn);*/
-						echo'<br>';
-						echo'<br>';
-						 /*+++*/
-						  /* echo'<INPUT TYPE="text" class="ftexto" NAME="vdetalle_historial" title="Escribir el detalle de la actividad" size="133">';*/
-						echo'<font size="1">Ingrese el Número del Informe:</font>';
-						echo'<br>';
-						echo'<br>';
-						echo'
-						<INPUT TYPE="text" class="ftexto" NAME="vnominfo_historial" title="Escribir el nombre del informe" size="156">';
-						echo'<br>';
-						echo'<br>';
-						echo'<font size="1">Dirigido a:</font>';
-						echo'<br>';
-						echo'<br>';
-						echo'
-						<INPUT TYPE="text" class="ftexto" NAME="vdirigido_historial" title="Escribir el nombre  de la persona a quien va dirigido el informe" size="156">';
-						echo'<br>';
-						echo'<br>';
-						echo'<font size="1">Cargo de la persona a quien va dirigido a:</font>';
-						echo'<br>';
-						echo'<br>';
-						echo'
-						<INPUT TYPE="text" class="ftexto" NAME="vcargo_historial" title="Escribir el cargo de la persona a quien va dirigido" size="156">';
-						echo'<br>';
-						echo'<br>';
-						echo'<font size="1">Remitente:</font>';
-						echo'<br>';
-						echo'<br>';
-
-						$sql="select codper, Nombres, sigla  from individual where codper =".$codper;
-						$result_nombre=luis($conn, $sql);
-						while ($row=fetchrow($result_nombre,-1))
-						{
-						$nombre_remitente=$row[1];
-						$cargo_remitente=$row[2];
-						}
-						cierra($result_nombre);
-						$espacio = ' ';
-						$nombre_cargo_remitente =$cargo_remitente.$espacio.$nombre_remitente;
-						/*++++++++++*/
-
-						echo'
-						<INPUT TYPE="text" class="ftexto" NAME="vremitente_historial" title="Escribir el nombre del informe" size="156" value="'.$nombre_cargo_remitente.'">';
-						echo'<br>';
-						echo'<br>';
-						echo'<font size="1">Ingrese el Detalle de Acciones del Informe:</font>';
-						echo'<br>';
-						echo'<br>';
-						echo'
-						<textarea class="ftexto" NAME="vdetalle_historial" title="Escribir el detalle de la actividad" rows="3" cols="156" ></textarea>';
-						/*echo'<br>';
-						echo'<br>';
-						echo'<font size="1">Ingrese el Detalle de Acciones del Informe - Parrafo 2:</font>';*/
-						/*echo'<br>';
-						echo'<br>';
-						echo'
-						<textarea class="ftexto" NAME="vdetalle2_historial" title="Escribir el detalle de la actividad" rows="3" cols="156" ></textarea>';*/
-						echo'<br>';
-						echo'<br>';
-
-						echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance</font>';
-						echo '&nbsp;&nbsp;&nbsp;';
-
-						echo'<input type="number" name="vporcentaje_historial" title="Ingrese el porcentaje de avance (0-100)" min="0" max="100" style="width: 60px;" />';
-						echo '&nbsp;&nbsp;&nbsp;';
-						/*echo'<input class="btns" type="submit" name="addhistorial" value="Registrar"/>'; */
-						echo '<input type="hidden" name="coduni" value="'.$codigo.'">';
-						echo '<input type="hidden" name="addhistorial">';
-echo '<input class="btns" type=button onClick="javascript:msjregistrar()" value="Registrar"/>';
-
-						echo'</p>
-					</div>
-				</div>
-	</div>
-</div>
-					';
+		// Definir los meses según el semestre
+		$meses_semestre = [];
+		switch ($semestre_acti) {
+			case '2025-I':
+				$meses_semestre = ['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio'];
+				break;
+			case '2025-II':
+				$meses_semestre = ['Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+				break;
+			case '2025-REC':
+				$meses_semestre = ['Diciembre', 'Enero', 'Febrero'];
+				break;
+			case '2025-INT':
+				$meses_semestre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+				break;
+			default:
+				// Si no coincide con ningún semestre conocido, mostrar todos los meses
+				$meses_semestre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 		}
 
-		// --- INICIO: JavaScript para Filtro por Mes ---GABO
-			?>
-			<script>
-			document.getElementById('filtro_mes_individual').addEventListener('change', function() {
-				const mesSeleccionado = this.value;
-				const todasLasTablas = document.querySelectorAll('table[border="1"][cellspacing="0"][width="100%"]');
+		foreach ($meses_semestre as $mes) {
+			echo '<option value="' . $mes . '">' . $mes . '</option>';
+		}
 
-				todasLasTablas.forEach(tabla => {
-					// Verificar si la tabla es de "Detalle de Carga No Lectiva"
-					const esTablaDeActividad = tabla.querySelector('td[colspan="1"] > font[size="1"]') && 
-											tabla.querySelector('td[colspan="1"] > font[size="1"]').textContent.includes('Actividad');
+		echo '</select>';
+		echo '</div>';
+		// --- FIN: Filtro por Mes ---
 
-					if (esTablaDeActividad) {
-						// Obtener las fechas de la fila que contiene los inputs de fecha
-						const filaFechas = tabla.querySelector('input[name^="dateboxx"]');
-						if (filaFechas) {
-							const fechaInicioInput = tabla.querySelector('input[name^="dateboxx"]');
-							const fechaFinInput = tabla.querySelector('input[name^="dateboxx2"]');
+			// MODIFICACIÓN 3: Se envuelve el formulario del "acordeón" en una condición
+			// para que solo se muestre a los docentes TC.
+			if ($ValidarTiempoCompleto == "TC") {
+				if($a>0)
+				{
+					echo'
+		<div id="main" style="text-align: left;">
+			<div id="list3">
+						<div>
+							<div class="title"><img src="imagenes/flecha_trab.png" width=12 height=12 border=0></a> &nbsp;&nbsp;&nbsp; Registre el avance de su actividad - <font size="1"><blink> Haga clic izquierdo aqui para visualizar el formulario.</blink></font></div>
+							<div>
+								<p>';
 
-							if (fechaInicioInput && fechaFinInput) {
-								const fechaInicio = fechaInicioInput.value;
-								const fechaFin = fechaFinInput.value;
 
-								if (mesSeleccionado === "") {
-									// Mostrar todas si no hay filtro
-									tabla.style.display = '';
-								} else {
-									// Convertir el nombre del mes a número
-									const mesNumero = obtenerNumeroMes(mesSeleccionado);
+								 /*+++++*/
+								 /*CREO COMBO CON LOS DETALLES DE LAS ACTIVIDADES*/
 
-									// Verificar si el mes seleccionado está dentro del rango de fechas
-									const estaEnRango = estaMesEnRango(fechaInicio, fechaFin, mesNumero);
+								$sql="select idtrab, dactividad from trab where codigo=".$codigo." and idsem =".$sem;
+								//echo $sql;
 
-									if (estaEnRango) {
+								$result=luis($conn, $sql);
+
+								echo'<font size="1">Seleccione el detalle de su Actividad</font>';
+								echo' &nbsp;&nbsp;&nbsp;&nbsp; ';
+								echo'<select size="1" name="vdactividad_historial" title="Seleccionar el detalle de su actividad">';
+									while ($row=fetchrow($result,-1))
+									{
+										$da++;
+									echo '<option value="'.$row[0].'">'.$row[1].'</option>';
+									}
+								echo '</select>';
+
+								cierra($result);
+								/*noconex($conn);*/
+								echo'<br>';
+								echo'<br>';
+								 /*+++*/
+								  /* echo'<INPUT TYPE="text" class="ftexto" NAME="vdetalle_historial" title="Escribir el detalle de la actividad" size="133">';*/
+								echo'<font size="1">Ingrese el Número del Informe:</font>';
+								echo'<br>';
+								echo'<br>';
+								echo'
+								<INPUT TYPE="text" class="ftexto" NAME="vnominfo_historial" title="Escribir el nombre del informe" size="156">';
+								echo'<br>';
+								echo'<br>';
+								echo'<font size="1">Dirigido a:</font>';
+								echo'<br>';
+								echo'<br>';
+								echo'
+								<INPUT TYPE="text" class="ftexto" NAME="vdirigido_historial" title="Escribir el nombre  de la persona a quien va dirigido el informe" size="156">';
+								echo'<br>';
+								echo'<br>';
+								echo'<font size="1">Cargo de la persona a quien va dirigido a:</font>';
+								echo'<br>';
+								echo'<br>';
+								echo'
+								<INPUT TYPE="text" class="ftexto" NAME="vcargo_historial" title="Escribir el cargo de la persona a quien va dirigido" size="156">';
+								echo'<br>';
+								echo'<br>';
+								echo'<font size="1">Remitente:</font>';
+								echo'<br>';
+								echo'<br>';
+
+								$sql="select codper, Nombres, sigla  from individual where codper =".$codper;
+								$result_nombre=luis($conn, $sql);
+								while ($row=fetchrow($result_nombre,-1))
+								{
+								$nombre_remitente=$row[1];
+								$cargo_remitente=$row[2];
+								}
+								cierra($result_nombre);
+								$espacio = ' ';
+								$nombre_cargo_remitente =$cargo_remitente.$espacio.$nombre_remitente;
+								/*++++++++++*/
+
+								echo'
+								<INPUT TYPE="text" class="ftexto" NAME="vremitente_historial" title="Escribir el nombre del informe" size="156" value="'.$nombre_cargo_remitente.'">';
+								echo'<br>';
+								echo'<br>';
+								echo'<font size="1">Ingrese el Detalle de Acciones del Informe:</font>';
+								echo'<br>';
+								echo'<br>';
+								echo'
+								<textarea class="ftexto" NAME="vdetalle_historial" title="Escribir el detalle de la actividad" rows="3" cols="156" ></textarea>';
+								/*echo'<br>';
+								echo'<br>';
+								echo'<font size="1">Ingrese el Detalle de Acciones del Informe - Parrafo 2:</font>';*/
+								/*echo'<br>';
+								echo'<br>';
+								echo'
+								<textarea class="ftexto" NAME="vdetalle2_historial" title="Escribir el detalle de la actividad" rows="3" cols="156" ></textarea>';*/
+								echo'<br>';
+								echo'<br>';
+
+								echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance</font>';
+								echo '&nbsp;&nbsp;&nbsp;';
+
+								echo'<input type="number" name="vporcentaje_historial" title="Ingrese el porcentaje de avance (0-100)" min="0" max="100" style="width: 60px;" />';
+								echo '&nbsp;&nbsp;&nbsp;';
+								/*echo'<input class="btns" type="submit" name="addhistorial" value="Registrar"/>'; */
+								echo '<input type="hidden" name="coduni" value="'.$codigo.'">';
+								echo '<input type="hidden" name="addhistorial">';
+		echo '<input class="btns" type=button onClick="javascript:msjregistrar()" value="Registrar"/>';
+
+								echo'</p>
+							</div>
+						</div>
+			</div>
+		</div>
+							';
+				}
+			} // Fin de la condición para ocultar el acordeón
+
+			// --- INICIO: JavaScript para Filtro por Mes ---GABO
+				?>
+				<script>
+				document.getElementById('filtro_mes_individual').addEventListener('change', function() {
+					const mesSeleccionado = this.value;
+					const todasLasTablas = document.querySelectorAll('table[border="1"][cellspacing="0"][width="100%"]');
+
+					todasLasTablas.forEach(tabla => {
+						// Verificar si la tabla es de "Detalle de Carga No Lectiva"
+						const esTablaDeActividad = tabla.querySelector('td[colspan="1"] > font[size="1"]') && 
+												tabla.querySelector('td[colspan="1"] > font[size="1"]').textContent.includes('Actividad');
+
+						if (esTablaDeActividad) {
+							// Obtener las fechas de la fila que contiene los inputs de fecha
+							const filaFechas = tabla.querySelector('input[name^="dateboxx"]');
+							if (filaFechas) {
+								const fechaInicioInput = tabla.querySelector('input[name^="dateboxx"]');
+								const fechaFinInput = tabla.querySelector('input[name^="dateboxx2"]');
+
+								if (fechaInicioInput && fechaFinInput) {
+									const fechaInicio = fechaInicioInput.value;
+									const fechaFin = fechaFinInput.value;
+
+									if (mesSeleccionado === "") {
+										// Mostrar todas si no hay filtro
 										tabla.style.display = '';
 									} else {
-										tabla.style.display = 'none';
+										// Convertir el nombre del mes a número
+										const mesNumero = obtenerNumeroMes(mesSeleccionado);
+
+										// Verificar si el mes seleccionado está dentro del rango de fechas
+										const estaEnRango = estaMesEnRango(fechaInicio, fechaFin, mesNumero);
+
+										if (estaEnRango) {
+											tabla.style.display = '';
+										} else {
+											tabla.style.display = 'none';
+										}
 									}
 								}
 							}
 						}
-					}
+					});
 				});
-			});
 
-				function obtenerNumeroMes(nombreMes) {
-					const meses = {
-						'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4, 'Mayo': 5, 'Junio': 6,
-						'Julio': 7, 'Agosto': 8, 'Setiembre': 9, 'Octubre': 10, 'Noviembre': 11, 'Diciembre': 12
-					};
-					return meses[nombreMes] || 0;
-				}
+					function obtenerNumeroMes(nombreMes) {
+						const meses = {
+							'Enero': 1, 'Febrero': 2, 'Marzo': 3, 'Abril': 4, 'Mayo': 5, 'Junio': 6,
+							'Julio': 7, 'Agosto': 8, 'Setiembre': 9, 'Octubre': 10, 'Noviembre': 11, 'Diciembre': 12
+						};
+						return meses[nombreMes] || 0;
+					}
 
-				function estaMesEnRango(fechaInicioStr, fechaFinStr, mesBuscado) {
-					// Convertir SOLO la fecha de inicio de string "dd/mm/yyyy" a objeto Date
-					const partesInicio = fechaInicioStr.split('/');
-					const fechaInicio = new Date(partesInicio[2], partesInicio[1] - 1, partesInicio[0]);
+					function estaMesEnRango(fechaInicioStr, fechaFinStr, mesBuscado) {
+						// Convertir SOLO la fecha de inicio de string "dd/mm/yyyy" a objeto Date
+						const partesInicio = fechaInicioStr.split('/');
+						const fechaInicio = new Date(partesInicio[2], partesInicio[1] - 1, partesInicio[0]);
 
-					// Obtener el mes de la fecha de inicio (enero = 0, por eso sumamos 1)
-					const mesInicio = fechaInicio.getMonth() + 1;
+						// Obtener el mes de la fecha de inicio (enero = 0, por eso sumamos 1)
+						const mesInicio = fechaInicio.getMonth() + 1;
 
-					// Devolver true solo si el mes de inicio coincide con el mes buscado
-					return mesInicio === mesBuscado;
-				}
-				</script>
-				<?php
-				// --- FIN: JavaScript para Filtro por Mes ---
+						// Devolver true solo si el mes de inicio coincide con el mes buscado
+						return mesInicio === mesBuscado;
+					}
+					</script>
+					<?php
+					// --- FIN: JavaScript para Filtro por Mes ---
 
-		noconex($conn);
-		/*FIN ACORDEON*/
+			noconex($conn);
 
-	} //Fin Validacion Plani --Yoel 23-10-18
+		} 
+			/*FIN ACORDEON*/
 
+		} //Fin Validacion Plani --Yoel 23-10-18
 
+	} // Fin del bloque if ($ValidarTiempoCompleto == "TC")
 
 /*HASTA AQUI CAPTURO LA FECHA EN QUE INICIA EL SEMESTRE SEMESTRE*/
 //by gabo
@@ -3377,21 +3392,9 @@ $sql="exec trabixdoc_v2 ".$codigo.",".$sem;
 // Si codigo e idsem son números
 // Asegurar tipos
 
-
-
-
-
-
 // Por ejemplo
 
 // Validar que sean números enteros
-
-
-
-
-
-
-
 
 //echo $sql;
 $da=0;
@@ -3583,8 +3586,10 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 			/*Hasta aqui 19-10-2018 Yoel*/
 
 		echo '<tr>';
-			if($estado>0) {
+			if($estado>0 && $ValidarTiempoCompleto == 'TC') { // Solo es editable para TC
 				$editable=' - el contenido de la actividad puede ser editado';
+			} else if ($ValidarTiempoCompleto != 'TC') {
+				$editable=' - <span style="color: red;"><strong>No editable para esta dedicación</strong></span>';
 			} else {
 				$editable=' - <span style="color: red;"><strong>el contenido de la actividad no puede ser editado</strong></span>';
 			}
@@ -3678,7 +3683,7 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 		echo'</tr>';
 		echo'<tr>';
 			echo '<td><font size="1">';
-			if ($estado>0) {
+			if ($estado>0 && $ValidarTiempoCompleto == 'TC') {
 				echo'<INPUT TYPE="text" class="ftexto" NAME="vdacti_editar'.$da.'" title="Escribir la actividad que realizara" style="width: 98%;" maxlength="107" value="'.$row[2].'">';
 			} else {
 				echo'<INPUT TYPE="text" class="ftexto" NAME="vdacti_editar'.$da.'" title="Escribir la actividad que realizara" style="width: 98%;" readonly="readonly" maxlength="107" value="'.$row[2].'">';
@@ -3691,7 +3696,7 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 		echo '</tr>';
 		echo '<tr>';
 			echo '<td><font size="1">';
-				if ($estado>0) {
+				if ($estado>0 && $ValidarTiempoCompleto == 'TC') {
 					echo'<INPUT TYPE="text" class="ftexto" NAME="vimporta_editar'.$da.'" title="Escribir la importancia de la actividad" style="width: 98%;" maxlength="255" value="'.$row[3].'">';
 				} else {
 					echo'<INPUT TYPE="text" class="ftexto" NAME="vimporta_editar'.$da.'" title="Escribir la importancia de la actividad" style="width: 98%;" readonly="readonly" maxlength="255" value="'.$row[3].'">';
@@ -3704,7 +3709,7 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 		echo '</tr>';
 		echo '<tr>';
 			echo '<td><font size="1">';
-			if ($estado>0) {
+			if ($estado>0 && $ValidarTiempoCompleto == 'TC') {
 				echo'<INPUT TYPE="text" class="ftexto" NAME="vmeta_editar'.$da.'" title="Escribir la meta a alcanzar en el semestre" style="width: 98%;" maxlength="255" value="'.$row[8].'">';
 			} else {
 				echo'<INPUT TYPE="text" class="ftexto" NAME="vmeta_editar'.$da.'" title="Escribir la meta a alcanzar en el semestre" style="width: 98%;" readonly="readonly" maxlength="255" value="'.$row[8].'">';
@@ -3781,7 +3786,7 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 			echo '</select>';
 			echo'</font>';
 			echo'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font size="1">';
-			if ($estado>0)
+			if ($estado>0 && $ValidarTiempoCompleto == 'TC')
 			{
 				echo'<INPUT TYPE="text" class="ftexto" NAME="vcant_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5" value="'.$row[5].'">';
 
@@ -3802,7 +3807,7 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 				$color="black";
 			}
 
-			if ($estado>0)
+			if ($estado>0 && $ValidarTiempoCompleto == 'TC')
 			{
 				echo '<INPUT TYPE="text" class="ftexto" style="color:'.$color.'" NAME="vhoras_editar'.$da.'" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2" value="'.$row[6].'">';
 			}
@@ -3832,29 +3837,33 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 		if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
 		{
 
-				if (($dias_semetre>$dias_avance)or($estado>0) )
-				{
-					echo '&nbsp;&nbsp;&nbsp;';
-					echo '<input class="btns" type="submit" '.$va.' name="de'.$da.'" value="Eliminar" onClick="return confirmdelete()">';
-					echo '<input type="hidden" name="vi'.$da.'" value="'.$row[0].'">';
-					echo '&nbsp;&nbsp;&nbsp;';
-					echo '<input class="btns" type="submit" '.$va.' name="dedit'.$da.'" value="Editar"  onClick="return confirmSubmit()"/>';
-					echo '&nbsp;&nbsp;&nbsp;';
-					if ($porcentajex==100 and $estadox>0)
+				// MODIFICACIÓN 4: Se envuelven los botones de acción (Eliminar, Editar, etc.)
+				// en una condición para que solo los docentes TC los vean.
+				if ($ValidarTiempoCompleto == "TC") {
+					if (($dias_semetre>$dias_avance)or($estado>0) )
 					{
-					echo '<input class="btns" type="submit" '.$va.' name="delim'.$da.'" value="Finalizar"  onClick="return confirmFinalizar('.$estadofinalfaina.')"/>';
-					echo '&nbsp;&nbsp;&nbsp;';
-					echo '<input class="btns" type="submit" name="rever'.$da.'" value="Revertir" onClick="return confirmRevertir()"/>';
-					}
+						echo '&nbsp;&nbsp;&nbsp;';
+						echo '<input class="btns" type="submit" '.$va.' name="de'.$da.'" value="Eliminar" onClick="return confirmdelete()">';
+						echo '<input type="hidden" name="vi'.$da.'" value="'.$row[0].'">';
+						echo '&nbsp;&nbsp;&nbsp;';
+						echo '<input class="btns" type="submit" '.$va.' name="dedit'.$da.'" value="Editar"  onClick="return confirmSubmit()"/>';
+						echo '&nbsp;&nbsp;&nbsp;';
+						if ($porcentajex==100 and $estadox>0)
+						{
+						echo '<input class="btns" type="submit" '.$va.' name="delim'.$da.'" value="Finalizar"  onClick="return confirmFinalizar('.$estadofinalfaina.')"/>';
+						echo '&nbsp;&nbsp;&nbsp;';
+						echo '<input class="btns" type="submit" name="rever'.$da.'" value="Revertir" onClick="return confirmRevertir()"/>';
+						}
 
-				}
-				else
-				{
-					echo '&nbsp;&nbsp;&nbsp;';
-					echo '<input class="btns" type="submit" disabled="disabled" name="de'.$da.'" value="Eliminar">';
-					echo '<input type="hidden" name="vi'.$da.'" value="'.$row[0].'">';
-					echo '&nbsp;&nbsp;&nbsp;';
-					echo '<input class="btns" type="submit" disabled="disabled" name="dedit'.$da.'" value="Editar"/>';
+					}
+					else
+					{
+						echo '&nbsp;&nbsp;&nbsp;';
+						echo '<input class="btns" type="submit" disabled="disabled" name="de'.$da.'" value="Eliminar">';
+						echo '<input type="hidden" name="vi'.$da.'" value="'.$row[0].'">';
+						echo '&nbsp;&nbsp;&nbsp;';
+						echo '<input class="btns" type="submit" disabled="disabled" name="dedit'.$da.'" value="Editar"/>';
+					}
 				}
 
 		} //Fin Validacion Plani --Yoel 23-10-18
@@ -3918,98 +3927,88 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 
 
 	//GABO
-	$conn=conex();
-	$sql="usp_Pit_ObtenerDatosResumen ".$codper.", ".$sem;
-	$result=luis($conn, $sql);
+		// --- INICIO: BLOQUE DE CÓDIGO MODIFICADO ---
+	$conn = conex();
+
+	// 1. Obtener las horas laborales del docente
+	$sql_resumen = "usp_Pit_ObtenerDatosResumen " . $codper . ", " . $sem;
+	$result_resumen = luis($conn, $sql_resumen);
 	$horas_laborales = 0;
-	$dedicacion = ''; // Variable para almacenar la dedicación
-	while ($row=fetchrow($result,-1))
-	{
+	while ($row = fetchrow($result_resumen, -1)) {
 		$horas_laborales = $row[4];
-		$dedicacion = trim($row[3]); // Asumiendo que la dedicación está en la posición 3
 	}
-	cierra($result);
+	cierra($result_resumen);
 
-	// Calcular el total de horas (lectivas + no lectivas)
-	$total_horas = $hl + $hn;
+	// 2. Obtener la dependencia del docente para verificar exención
+	$sql_dependencia = "SELECT (SELECT descrip FROM depe WHERE depe.iddepe = individual.iddepe) AS dependencia FROM individual WHERE codper = " . $codper;
+	$result_dependencia = luis($conn, $sql_dependencia);
+	$dependencia_docente = '';
+	while ($row_dep = fetchrow($result_dependencia, -1)) {
+		$dependencia_docente = $row_dep[0];
+	}
+	cierra($result_dependencia);
 
-	// Aplicar validaciones según la dedicación
-	if ($dedicacion === 'DE') { // Dedicación Exclusiva
-		if ($total_horas < 40) {
-			$mensaje = ' No cumple con el mínimo de 40 horas requeridas para dedicación exclusiva';
-		} else {
-			$mensaje = ' Cumple con el mínimo de 40 horas requeridas para dedicación exclusiva';
-		}
-	} elseif ($dedicacion === 'TP') { // Tiempo Parcial
-		if ($total_horas >= 40) {
-			$mensaje = ' No debe alcanzar o superar las 40 horas por ser tiempo parcial';
-		} else {
-			$mensaje = ' Cumple con el límite de menos de 40 horas por ser tiempo parcial';
-		}
-	} else { // Para TC (Tiempo Completo) u otros, usar la lógica original basada en $horas_laborales
-		if ($total_horas > $horas_laborales) {
-			$mensaje = ' No debe de sobrepasar las ' . $horas_laborales . ' horas';
-		} else {
-			if ($total_horas < $horas_laborales) {
-				$mensaje = ' Debe de completar las ' . $horas_laborales . ' horas';
-			} else {
-				$mensaje = ' Cumple con las ' . $horas_laborales . ' horas';
-			}
-		}
+	// 3. Calcular el total de horas (lectivas + no lectivas)
+	$total_horas_calculadas = $hl + $hn;
+	if ($vah > 0) {
+		$total_horas_calculadas = $hl + ($hn - $hora_descuento);
 	}
 
+	// 4. Verificar si el docente está exento (Rector o Vicerrector)
+	$es_exento = (
+		stripos($dependencia_docente, 'rectorado') !== false ||
+		stripos($dependencia_docente, 'vice rectorado') !== false
+	);
 
+	// 5. Aplicar las validaciones y generar el mensaje según cada dedicación
+	$mensaje = ''; // Inicializar la variable del mensaje
 
-	if ($vah>0)
-	{
-		// if($hl+$hn>40)
-		if(($hl+($hn-$hora_descuento))>$horas_laborales)
-		{
-			// $mensaje =' No debe de sobrepasar las 40 horas' ;
-			$mensaje =' No debe de sobrepasar las '.$horas_laborales.' horas' ;
-		}
-		else
-		{
-			// if($hl+$hn<40)
-			if(($hl+($hn-$hora_descuento))<$horas_laborales)
-			{
-				// $mensaje =' Debe de completar las 40 horas' ;
-				$mensaje =' Debe de completar las '.$horas_laborales.' horas' ;
-			}
-			else
-			{
-				// $mensaje =' Cumple con las 40 horas' ;
-				$mensaje =' Cumple con las '.$horas_laborales.' horas' ;
-			}
+	if ($es_exento) {
+		$mensaje = ' Exento de carga académica-administrativa';
+	} else {
+		switch ($ValidarTiempoCompleto) {
+			case 'TP': // Lógica para Tiempo Parcial
+				if ($total_horas_calculadas >= 40) {
+					$mensaje = ' No debe alcanzar o superar las 40 horas';
+				} else {
+					$mensaje = ' Cumple con el límite de menos de 40 horas';
+				}
+				break;
+
+			case 'DE': // Lógica para Dedicación Exclusiva
+				if ($total_horas_calculadas < 40) {
+					$mensaje = ' Debe de completar como minimo 40 horas';
+				} else {
+					$mensaje = ' Cumple con el minimo de 40 horas';
+				}
+				break;
+
+			case 'TC': // Lógica para Tiempo Completo
+			default:
+				// Parte 1: Validar las horas totales
+				if ($total_horas_calculadas < $horas_laborales) {
+					$mensaje_total = ' Debe de completar las ' . $horas_laborales . ' horas.';
+				} elseif ($total_horas_calculadas > $horas_laborales) {
+					$mensaje_total = ' No debe de sobrepasar las ' . $horas_laborales . ' horas.';
+				} else {
+					$mensaje_total = ' Cumple con las ' . $horas_laborales . ' horas.';
+				}
+
+				// Parte 2: Validar las horas lectivas
+				$mensaje_lectivas = '';
+				if ($hl < 20) {
+					$mensaje_lectivas = '<br> No cumple con el mínimo de 20 horas lectivas.';
+				}
+
+				// Combinar ambos mensajes
+				$mensaje = $mensaje_total . $mensaje_lectivas;
+				break;
 		}
 	}
-	else
-	{
-		// if($hl+$hn>40)
-		if($hl+$hn>$horas_laborales)
-		{
-			// $mensaje =' No debe de sobrepasar las 40 horas' ;
-			$mensaje =' No debe de sobrepasar las '.$horas_laborales.' horas' ;
-		}
-		else
-		{
-			// if($hl+$hn<40)
-			if($hl+$hn<$horas_laborales)
-			{
-				// $mensaje =' Debe de completar las 40 horas' ;
-				//echo $hl+$hn;
-				$mensaje =' Debe de completar las '.$horas_laborales.' horas' ;
-			}
-			else
-			{
-				// $mensaje =' Cumple con las 40 horas' ;
-				$mensaje =' Cumple con las '.$horas_laborales.' horas' ;
-			}
-		}
-	}
+	// --- FIN: BLOQUE DE CÓDIGO MODIFICADO ---
 
-	$total_horas=$hl+$hn;
-
+	// MODIFICACIÓN 5: Se ha eliminado el bloque de código redundante que recalculaba la variable $mensaje.
+	// El bloque de "NUEVAS VALIDACIONES" anterior ya genera el mensaje correcto para todos los casos (TC, TP, DE).
 
 	if ($vah>0)
 	{
@@ -4042,331 +4041,338 @@ $sql_add_detalle_trab="exec sp_add_detalle_trab ".$codigo_docente.", ".$id_semes
 //echo $sql_add_detalle_trab;
 $result_detalle_trab=luis($conn, $sql_add_detalle_trab);
 cierra($result_detalle_trab);
-	echo '<br><table border="0" width="100%">';
-	echo '<tr><td colspan="7"><b><font size="1">CALIFICACION</font></b></td></tr>
-			<tr>
-			<td><font size="1">1 = "Preparacion de Clase"</font></td>
-			<td><font size="1">2 = "Asesoramiento"</font></td>
-			<td><font size="1">5 = "Investigacion"</font></td>
-			<td><font size="1">8 = "Gestion Administrativa"</font></td>
-			<td><font size="1">9 = "Responsabilidad" Social"</font></td></tr>';
-	echo '</table>';
-	echo '<br><br>';
-	echo 'Descargar Guía de Usuario<a href="documentos/PIT_Docente/GUIA_PIT_DOCENTE_V2.pdf" target="_blank"><span style="color: red;"><font size="1" face="Arial"><blink>( Haga clic aquí )</blink> </font></span></a>';
-	echo '<br><br>';
-	if ($busca==0 or $busca==1)
-	{
-		echo '<input type="hidden" name="vn" maxlength="7" value="'.$da.'">';
-		echo '<input type="hidden" name="vcanthoras" maxlength="7" value="'.$total_horas.'">';
 
-//Validacion Plani --Yoel 23-10-18
-if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
-{
-
-	?>
-<script language="javascript">
-function actualizarTipoActividad() {
-    var actividad = document.getElementById("actividad").value;
-    var tipoSelect = document.getElementById("tipo_actividad");
-    var detalleSelect = document.getElementById("detalle_actividad");
-
-    // Limpiar los siguientes selects
-    tipoSelect.innerHTML = "<option value=''>-- Seleccione --</option>";
-    detalleSelect.innerHTML = "<option value=''>-- Seleccione --</option>";
-
-    var opciones = [];
-    if (actividad === "Academica") {
-        opciones = [
-            { value: "Lectiva", text: "Lectiva" },
-            { value: "No_Lectiva", text: "No Lectiva" },
-            { value: "Investigacion", text: "Investigación" },
-            { value: "Responsabilidad_Social", text: "Responsabilidad Social" }
-        ];
-    } else if (actividad === "Administrativa") {
-        opciones = [
-            { value: "Gestion", text: "Gestión" }
-        ];
-    }
-
-    // Limpiar opciones existentes
-    tipoSelect.innerHTML = "";
-    
-    // Agregar opción por defecto
-    var defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.text = "-- Seleccione --";
-    tipoSelect.appendChild(defaultOption);
-
-    opciones.forEach(function(opcion) {
-        var opt = document.createElement("option");
-        opt.value = opcion.value;
-        opt.text = opcion.text;
-        tipoSelect.appendChild(opt);
-    });
-}
-
-
-//Gabo
-function actualizarDetalleActividad() {
-    var tipo = document.getElementById("tipo_actividad").value;
-    var detalleSelect = document.getElementById("detalle_actividad");
-    // Limpiar opciones existentes
-    detalleSelect.innerHTML = "";
-    // Agregar opción por defecto
-    var defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.text = "-- Seleccione --";
-    detalleSelect.appendChild(defaultOption);
-    var opciones = [];
-    switch(tipo) {
-        case "Lectiva":
-            opciones = [{ value: "Preparacion_Clase", text: "Preparación de clase y evaluación" }];
-            break;
-        case "No_Lectiva":
-            opciones = [
-                { value: "Asesoria_Practicas", text: "Asesoramiento prácticas pre profesionales" },
-                { value: "Consejeria", text: "Consejería" },
-                { value: "Tutoria", text: "Tutoría" },
-                { value: "Monitoreo_Seguimiento", text: "Monitoreo y seguimiento" },
-                { value: "Organizacion_Eventos", text: "Organización de eventos" },
-                { value: "Actividades_Academicas", text: "Actividades académicas" },
-                { value: "Actividades_Acreditacion", text: "Actividades de acreditación" }
-            ];
-            break;
-        case "Investigacion":
-            opciones = [
-                { value: "Asesoria_Tesis", text: "Asesoría de tesis" },
-                { value: "Jurados", text: "Jurados" },
-                { value: "Produccion_Intelectual", text: "Producción intelectual" },
-                { value: "Articulos_Investigacion", text: "Artículos investigación" },
-                { value: "Proyectos_Investigacion", text: "Proyectos de investigación" }
-            ];
-            break;
-        case "Responsabilidad_Social":
-            opciones = [
-                { value: "Proyeccion_Social", text: "Proyección social" },
-                { value: "Extension_Universitaria", text: "Extensión universitaria" },
-                { value: "Responsabilidad_Social_Detalle", text: "Responsabilidad social" },
-                { value: "PSSU", text: "PSSU" },
-                { value: "Voluntariado", text: "Voluntariado" },
-                { value: "Seguimiento_Egresados", text: "Seguimiento a egresados en escuelas" },
-                { value: "GPSAlumni", text: "Actividades GPSAlumni" }
-            ];
-            break;
-        case "Gestion":
-            opciones = [
-                { value: "Jefatura_Oficina", text: "Jefatura de oficina" },
-                { value: "Unidad_Administrativa", text: "Jefatura de unidad administrativa" },
-                { value: "Coordinador_Area", text: "Coordinador de área" },
-                { value: "Coordinador_Unidad_Academica", text: "Coordinador de unidad académica" },
-                { value: "Coordinador_Unidad_Investigacion", text: "Coordinador de unidad de investigación" },
-                { value: "Coordinador_GPSAlumni", text: "Coordinador de GPSAlumni" },
-                { value: "Coordinador_RS", text: "Coordinador de Responsabilidad social" },
-                { value: "Comisiones", text: "Comisiones" },
-                { value: "Comite_Mejora", text: "Comité de mejora continua" }
-            ];
-            break;
-    }
-    opciones.forEach(function(opcion) {
-        var opt = document.createElement("option");
-        opt.value = opcion.value;
-        opt.text = opcion.text;
-        detalleSelect.appendChild(opt);
-    });
-
-    // --- INICIO CAMBIO: Autorellenar horas si es Lectiva ---
-    if (tipo === "Lectiva") {
-        document.querySelector('input[name="vhoras"]').value = <?php echo $total_horas_lectivas_cuadro; ?>;
-    } else {
-        // Opcional: Limpiar el campo si se cambia de tipo
-        // document.querySelector('input[name="vhoras"]').value = '';
-    }
-    // --- FIN CAMBIO ---
-}
-</script>
-
-<?php
-		// --- INICIO CAMBIO: Reemplazar array manual con consulta SQL GABO ---
-		// $dependencias = [ "AC : Área de Contabilidad", "AGPH : Área de Gestión del Potencial Humano", ... ]; // <-- Línea original a eliminar
-
-		// Realizar la consulta para obtener las dependencias desde la base de datos
-		$sql_dependencias = "SELECT DISTINCT descrip FROM depe AS d WHERE d.estado = 0 ORDER BY descrip";
-		$result_dependencias = luis($conn, $sql_dependencias); // Asumiendo que $conn está disponible y es válido
-		$dependencias = array(); // Inicializar array vacío
-
-		while ($row_dep = fetchrow($result_dependencias, -1)) {
-			$dependencias[] = $row_dep[0]; // Añadir cada descripción al array
-		}
-		cierra($result_dependencias);
-		// --- FIN CAMBIO ---
-
-		// Se define el número de columnas para que los colspan sean consistentes
-		$num_columnas = 4;
-
-		echo '<table border="0" cellspacing="2" bgcolor="#CCE6FF" style="width: 100%;">'; // Se añade un ancho a la tabla
-				echo '<tr>';
-			echo '<td colspan="'.$num_columnas.'"><font size="1">Actividad</font></td>';
-			echo '</tr>';
-			
-			// Fila para los comboboxes, cada uno en su celda
-			echo '<tr>';
-			
-			// Primer Combobox - Actividad
-			echo '<td>';
-			echo '<select size="1" id="actividad" name="vacti" onchange="actualizarTipoActividad()" style="width: 100%;">';
-			echo '<option value="">-- Seleccione --</option>';
-			echo '<option value="Academica">Académica</option>';
-			echo '<option value="Administrativa">Administrativa</option>';
-			echo '</select>';
-			echo '</td>';
-			
-			// Segundo Combobox - Tipo de Actividad
-			echo '<td>';
-			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Tipo de Actividad:</font>';
-			echo '<select size="1" id="tipo_actividad" name="vtipo" onchange="actualizarDetalleActividad()" style="width: 100%;">';
-			echo '<option value="">-- Seleccione --</option>';
-			echo '</select>';
-			echo '</td>';
-			
-			// Tercer Combobox - Detalle de Actividad
-			echo '<td>';
-			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Detalle:</font>';
-			echo '<select size="1" id="detalle_actividad" name="vdetalle" style="width: 100%;">';
-			echo '<option value="">-- Seleccione --</option>';
-			echo '</select>';
-			echo '</td>';
-
-
-
-			// Cuarto Combobox - Dependencia (NUEVO) 
-			echo '<td>';
-			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Dependencia:</font>';
-			echo '<select size="1" name="vdependencia" style="width: 100%;">';
-			echo '<option value="">-- Seleccione --</option>';
-
-			foreach ($dependencias as $dependencia) {
-				$selected = '';
-				// CORRECCIÓN: Comparamos si el nombre de la escuela está CONTENIDO
-				// en la opción de dependencia, en lugar de una comparación exacta.
-				// Usamos la variable que guardamos al principio.
-				if (!empty($nombreEscuelaPorDefecto) && strpos($dependencia, $nombreEscuelaPorDefecto) !== false) {
-					$selected = ' selected="selected"';
-				}
-				echo '<option value="' . htmlspecialchars($dependencia) . '"' . $selected . '>' . htmlspecialchars($dependencia) . '</option>';
-			}
-			echo '</select>';
-			echo '</td>';
-			
-			echo '</tr>';
-			
-			// Fila para las fechas y el porcentaje
-			echo '<tr>';
-			
-			date_default_timezone_set('America/Lima');
-			$conn=conex();
-			$sql="select s.inicioclases, s.finentregaactas from semestre s where s.activo>0 and s.idsem=".$sem;
-			$result=luis($conn, $sql);
-			while ($row=fetchrow($result,-1)) {
-				$FechaInicio = $row[0];
-				$FechaFin = $row[1];
-			}
-			cierra($result);
-			$dia=date("d/m/Y",strtotime($FechaInicio));
-			$dia2=date("d/m/Y",strtotime($FechaFin));
-
-			if (isset($_POST["datebox"])==true){ $dia=$_POST["datebox"]; }
-			if (isset($_POST["datebox2"])==true){ $dia2=$_POST["datebox2"]; }
-
-			// Fecha Inicio
-			echo '<td colspan="2">'; // Abarca 2 columnas
-			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
-			?>
-			 <input name="datebox" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox,'dd/mm/yyyy',this)" type="text" value=<? echo $dia ?>>
-			&nbsp;&nbsp;
-			<?
-			// Fecha Final
-			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Final:</font>';
-			?>
-			 <input name="datebox2" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox2,'dd/mm/yyyy',this)" type="text" value=<? echo $dia2 ?> >
-			<?
-			echo '</td>';
-
-			// Porcentaje de avance
-			echo '<td colspan="2">'; // Abarca 2 columnas
-			echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance:</font>';
-			echo '<INPUT TYPE="text" class="ftexto" NAME="vporcentaje" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" maxlength="2" value="10">';
-			echo '</td>';
-
-			echo '</tr>';
-
-			echo'<tr>';
-			echo '<td colspan="'.$num_columnas.'"><font size="1">Detalle Actividad</font></td>';
-			echo'</tr>';
-			echo'<tr>';
-			// CAJA DE TEXTO PARA CAPTURAR EL Detalle Actividad, con ancho automático
-			echo '<td colspan="'.$num_columnas.'"><INPUT TYPE="text" class="ftexto" NAME="vdacti" title="Escribir la actividad que realizara" style="width: 98%;" maxlength="100"></td>';
-			echo '</tr>';
-			
-			echo '<tr>';
-			echo '<td colspan="'.$num_columnas.'"><font size="1">Importancia</font></td>';
-			echo '</tr>';
-			echo '<tr>';
-			// CAJA DE TEXTO QUE CAPTURA LA Importancia
-			echo '<td colspan="'.$num_columnas.'"><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vimporta" title="Escribir la importancia de la actividad" style="width: 98%;" maxlength="255"></font></td>';
-			echo '</tr>';
-			
-			echo '<tr>';
-			echo '<td colspan="'.$num_columnas.'"><font size="1">Meta</font></td>';
-			echo '</tr>';
-			echo '<tr>';
-			// CAJA DE TEXTO QUE CAPTURA LA Meta
-			echo '<td colspan="'.$num_columnas.'"><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vmeta" title="Escribir la meta a alcanzar en el semestre" style="width: 98%;" maxlength="255"></font></td>';
-			echo '</tr>';
-			
-			echo '<tr>';
-				echo '<td><font size="1">Medida</font></td>';
-				echo '<td><font size="1">Cant</font></td>';
-				echo '<td><font size="1">Hrs. Semanales</font></td>';
-				echo '<td>&nbsp;</td>'; // Celda vacía para alinear el botón
-			echo '</tr>';
-			
-			echo '<tr>';
-				echo '<td>';
-				// genera el combo box de MEDIDA
-				echo '<select size="1" name="vmedida" title="Seleccionar la magnitud que representa lo establecido como meta">';
-				echo '<option value="Alumnos">Alumnos</option>';
-				echo '<option value="Documento">Documento(s)</option>';
-				echo '<option value="Permanente">Permanente</option>';
-				echo '</select></td>';
-				
-				echo '<td><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vcant" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5"></font></td>';
-				
-				echo '<td><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vhoras" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2"></font></td>';
-
-				echo '<td>'; // Celda para el Botón
-				// CAPTURO EL IDDEPE
-				$sql="select Iddepe  from individual where codper =".$codper;
-				$result_iddepe=luis($conn, $sql);
-				while ($row=fetchrow($result_iddepe,-1)) {
-					$iddepe=$row[0];
-				}
-				cierra($result_iddepe);
-
-				echo '<input type="hidden" name="coduni" value="'.$codigo.'">';
-				echo '<input type="hidden" name="viddepe" value="'.$iddepe.'">';
-				echo '<input type="hidden" name="vagregar">';
-				echo '<input class="btns" type=button onClick="javascript:msj()" value="Agregar"/>';
-				echo '</td>';
-			echo '</tr>';
+	// MODIFICACIÓN 6: Se envuelve el formulario final para "Agregar" actividad
+	// en una condición para que solo los docentes TC lo vean.
+	if ($ValidarTiempoCompleto == "TC") {
+		echo '<br><table border="0" width="100%">';
+		echo '<tr><td colspan="7"><b><font size="1">CALIFICACION</font></b></td></tr>
+				<tr>
+				<td><font size="1">1 = "Preparacion de Clase"</font></td>
+				<td><font size="1">2 = "Asesoramiento"</font></td>
+				<td><font size="1">5 = "Investigacion"</font></td>
+				<td><font size="1">8 = "Gestion Administrativa"</font></td>
+				<td><font size="1">9 = "Responsabilidad" Social"</font></td></tr>';
 		echo '</table>';
+		echo '<br><br>';
+		echo 'Descargar Guía de Usuario<a href="documentos/PIT_Docente/GUIA_PIT_DOCENTE_V2.pdf" target="_blank"><span style="color: red;"><font size="1" face="Arial"><blink>( Haga clic aquí )</blink> </font></span></a>';
+		echo '<br><br>';
+
+		
+		if ($busca==0 or $busca==1)
+		{
+			echo '<input type="hidden" name="vn" maxlength="7" value="'.$da.'">';
+			echo '<input type="hidden" name="vcanthoras" maxlength="7" value="'.$total_horas_calculadas.'">';
+
+			//Validacion Plani --Yoel 23-10-18
+			if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
+			{
+
+		?>
+		<script language="javascript">
+		function actualizarTipoActividad() {
+			var actividad = document.getElementById("actividad").value;
+			var tipoSelect = document.getElementById("tipo_actividad");
+			var detalleSelect = document.getElementById("detalle_actividad");
+
+			// Limpiar los siguientes selects
+			tipoSelect.innerHTML = "<option value=''>-- Seleccione --</option>";
+			detalleSelect.innerHTML = "<option value=''>-- Seleccione --</option>";
+
+			var opciones = [];
+			if (actividad === "Academica") {
+				opciones = [
+					{ value: "Lectiva", text: "Lectiva" },
+					{ value: "No_Lectiva", text: "No Lectiva" },
+					{ value: "Investigacion", text: "Investigación" },
+					{ value: "Responsabilidad_Social", text: "Responsabilidad Social" }
+				];
+			} else if (actividad === "Administrativa") {
+				opciones = [
+					{ value: "Gestion", text: "Gestión" }
+				];
+			}
+
+			// Limpiar opciones existentes
+			tipoSelect.innerHTML = "";
+			
+			// Agregar opción por defecto
+			var defaultOption = document.createElement("option");
+			defaultOption.value = "";
+			defaultOption.text = "-- Seleccione --";
+			tipoSelect.appendChild(defaultOption);
+
+			opciones.forEach(function(opcion) {
+				var opt = document.createElement("option");
+				opt.value = opcion.value;
+				opt.text = opcion.text;
+				tipoSelect.appendChild(opt);
+			});
+		}
 
 
-} //Fin Validacion Plani --Yoel 23-10-18
+		//Gabo
+		function actualizarDetalleActividad() {
+			var tipo = document.getElementById("tipo_actividad").value;
+			var detalleSelect = document.getElementById("detalle_actividad");
+			// Limpiar opciones existentes
+			detalleSelect.innerHTML = "";
+			// Agregar opción por defecto
+			var defaultOption = document.createElement("option");
+			defaultOption.value = "";
+			defaultOption.text = "-- Seleccione --";
+			detalleSelect.appendChild(defaultOption);
+			var opciones = [];
+			switch(tipo) {
+				case "Lectiva":
+					opciones = [{ value: "Preparacion_Clase", text: "Preparación de clase y evaluación" }];
+					break;
+				case "No_Lectiva":
+					opciones = [
+						{ value: "Asesoria_Practicas", text: "Asesoramiento prácticas pre profesionales" },
+						{ value: "Consejeria", text: "Consejería" },
+						{ value: "Tutoria", text: "Tutoría" },
+						{ value: "Monitoreo_Seguimiento", text: "Monitoreo y seguimiento" },
+						{ value: "Organizacion_Eventos", text: "Organización de eventos" },
+						{ value: "Actividades_Academicas", text: "Actividades académicas" },
+						{ value: "Actividades_Acreditacion", text: "Actividades de acreditación" }
+					];
+					break;
+				case "Investigacion":
+					opciones = [
+						{ value: "Asesoria_Tesis", text: "Asesoría de tesis" },
+						{ value: "Jurados", text: "Jurados" },
+						{ value: "Produccion_Intelectual", text: "Producción intelectual" },
+						{ value: "Articulos_Investigacion", text: "Artículos investigación" },
+						{ value: "Proyectos_Investigacion", text: "Proyectos de investigación" }
+					];
+					break;
+				case "Responsabilidad_Social":
+					opciones = [
+						{ value: "Proyeccion_Social", text: "Proyección social" },
+						{ value: "Extension_Universitaria", text: "Extensión universitaria" },
+						{ value: "Responsabilidad_Social_Detalle", text: "Responsabilidad social" },
+						{ value: "PSSU", text: "PSSU" },
+						{ value: "Voluntariado", text: "Voluntariado" },
+						{ value: "Seguimiento_Egresados", text: "Seguimiento a egresados en escuelas" },
+						{ value: "GPSAlumni", text: "Actividades GPSAlumni" }
+					];
+					break;
+				case "Gestion":
+					opciones = [
+						{ value: "Jefatura_Oficina", text: "Jefatura de oficina" },
+						{ value: "Unidad_Administrativa", text: "Jefatura de unidad administrativa" },
+						{ value: "Coordinador_Area", text: "Coordinador de área" },
+						{ value: "Coordinador_Unidad_Academica", text: "Coordinador de unidad académica" },
+						{ value: "Coordinador_Unidad_Investigacion", text: "Coordinador de unidad de investigación" },
+						{ value: "Coordinador_GPSAlumni", text: "Coordinador de GPSAlumni" },
+						{ value: "Coordinador_RS", text: "Coordinador de Responsabilidad social" },
+						{ value: "Comisiones", text: "Comisiones" },
+						{ value: "Comite_Mejora", text: "Comité de mejora continua" }
+					];
+					break;
+			}
+			opciones.forEach(function(opcion) {
+				var opt = document.createElement("option");
+				opt.value = opcion.value;
+				opt.text = opcion.text;
+				detalleSelect.appendChild(opt);
+			});
 
+			// --- INICIO CAMBIO: Autorellenar horas si es Lectiva ---
+			if (tipo === "Lectiva") {
+				document.querySelector('input[name="vhoras"]').value = <?php echo $total_horas_lectivas_cuadro; ?>;
+			} else {
+				// Opcional: Limpiar el campo si se cambia de tipo
+				// document.querySelector('input[name="vhoras"]').value = '';
+			}
+			// --- FIN CAMBIO ---
+		}
+		</script>
+
+		<?php
+				// --- INICIO CAMBIO: Reemplazar array manual con consulta SQL GABO ---
+				// $dependencias = [ "AC : Área de Contabilidad", "AGPH : Área de Gestión del Potencial Humano", ... ]; // <-- Línea original a eliminar
+
+				// Realizar la consulta para obtener las dependencias desde la base de datos
+				$sql_dependencias = "SELECT DISTINCT descrip FROM depe AS d WHERE d.estado = 0 ORDER BY descrip";
+				$result_dependencias = luis($conn, $sql_dependencias); // Asumiendo que $conn está disponible y es válido
+				$dependencias = array(); // Inicializar array vacío
+
+				while ($row_dep = fetchrow($result_dependencias, -1)) {
+					$dependencias[] = $row_dep[0]; // Añadir cada descripción al array
+				}
+				cierra($result_dependencias);
+				// --- FIN CAMBIO ---
+
+				// Se define el número de columnas para que los colspan sean consistentes
+				$num_columnas = 4;
+
+				echo '<table border="0" cellspacing="2" bgcolor="#CCE6FF" style="width: 100%;">'; // Se añade un ancho a la tabla
+						echo '<tr>';
+					echo '<td colspan="'.$num_columnas.'"><font size="1">Actividad</font></td>';
+					echo '</tr>';
+					
+					// Fila para los comboboxes, cada uno en su celda
+					echo '<tr>';
+					
+					// Primer Combobox - Actividad
+					echo '<td>';
+					echo '<select size="1" id="actividad" name="vacti" onchange="actualizarTipoActividad()" style="width: 100%;">';
+					echo '<option value="">-- Seleccione --</option>';
+					echo '<option value="Academica">Académica</option>';
+					echo '<option value="Administrativa">Administrativa</option>';
+					echo '</select>';
+					echo '</td>';
+					
+					// Segundo Combobox - Tipo de Actividad
+					echo '<td>';
+					echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Tipo de Actividad:</font>';
+					echo '<select size="1" id="tipo_actividad" name="vtipo" onchange="actualizarDetalleActividad()" style="width: 100%;">';
+					echo '<option value="">-- Seleccione --</option>';
+					echo '</select>';
+					echo '</td>';
+					
+					// Tercer Combobox - Detalle de Actividad
+					echo '<td>';
+					echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Detalle:</font>';
+					echo '<select size="1" id="detalle_actividad" name="vdetalle" style="width: 100%;">';
+					echo '<option value="">-- Seleccione --</option>';
+					echo '</select>';
+					echo '</td>';
+
+
+
+					// Cuarto Combobox - Dependencia (NUEVO) 
+					echo '<td>';
+					echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Dependencia:</font>';
+					echo '<select size="1" name="vdependencia" style="width: 100%;">';
+					echo '<option value="">-- Seleccione --</option>';
+
+					foreach ($dependencias as $dependencia) {
+						$selected = '';
+						// CORRECCIÓN: Comparamos si el nombre de la escuela está CONTENIDO
+						// en la opción de dependencia, en lugar de una comparación exacta.
+						// Usamos la variable que guardamos al principio.
+						if (!empty($nombreEscuelaPorDefecto) && strpos($dependencia, $nombreEscuelaPorDefecto) !== false) {
+							$selected = ' selected="selected"';
+						}
+						echo '<option value="' . htmlspecialchars($dependencia) . '"' . $selected . '>' . htmlspecialchars($dependencia) . '</option>';
+					}
+					echo '</select>';
+					echo '</td>';
+					
+					echo '</tr>';
+					
+					// Fila para las fechas y el porcentaje
+					echo '<tr>';
+					
+					date_default_timezone_set('America/Lima');
+					$conn=conex();
+					$sql="select s.inicioclases, s.finentregaactas from semestre s where s.activo>0 and s.idsem=".$sem;
+					$result=luis($conn, $sql);
+					while ($row=fetchrow($result,-1)) {
+						$FechaInicio = $row[0];
+						$FechaFin = $row[1];
+					}
+					cierra($result);
+					$dia=date("d/m/Y",strtotime($FechaInicio));
+					$dia2=date("d/m/Y",strtotime($FechaFin));
+
+					if (isset($_POST["datebox"])==true){ $dia=$_POST["datebox"]; }
+					if (isset($_POST["datebox2"])==true){ $dia2=$_POST["datebox2"]; }
+
+					// Fecha Inicio
+					echo '<td colspan="2">'; // Abarca 2 columnas
+					echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
+					?>
+					 <input name="datebox" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox,'dd/mm/yyyy',this)" type="text" value=<? echo $dia ?>>
+					&nbsp;&nbsp;
+					<?
+					// Fecha Final
+					echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Final:</font>';
+					?>
+					 <input name="datebox2" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox2,'dd/mm/yyyy',this)" type="text" value=<? echo $dia2 ?> >
+					<?
+					echo '</td>';
+
+					// Porcentaje de avance
+					echo '<td colspan="2">'; // Abarca 2 columnas
+					echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance:</font>';
+					echo '<INPUT TYPE="text" class="ftexto" NAME="vporcentaje" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" maxlength="2" value="10">';
+					echo '</td>';
+
+					echo '</tr>';
+
+					echo'<tr>';
+					echo '<td colspan="'.$num_columnas.'"><font size="1">Detalle Actividad</font></td>';
+					echo'</tr>';
+					echo'<tr>';
+					// CAJA DE TEXTO PARA CAPTURAR EL Detalle Actividad, con ancho automático
+					echo '<td colspan="'.$num_columnas.'"><INPUT TYPE="text" class="ftexto" NAME="vdacti" title="Escribir la actividad que realizara" style="width: 98%;" maxlength="100"></td>';
+					echo '</tr>';
+					
+					echo '<tr>';
+					echo '<td colspan="'.$num_columnas.'"><font size="1">Importancia</font></td>';
+					echo '</tr>';
+					echo '<tr>';
+					// CAJA DE TEXTO QUE CAPTURA LA Importancia
+					echo '<td colspan="'.$num_columnas.'"><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vimporta" title="Escribir la importancia de la actividad" style="width: 98%;" maxlength="255"></font></td>';
+					echo '</tr>';
+					
+					echo '<tr>';
+					echo '<td colspan="'.$num_columnas.'"><font size="1">Meta</font></td>';
+					echo '</tr>';
+					echo '<tr>';
+					// CAJA DE TEXTO QUE CAPTURA LA Meta
+					echo '<td colspan="'.$num_columnas.'"><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vmeta" title="Escribir la meta a alcanzar en el semestre" style="width: 98%;" maxlength="255"></font></td>';
+					echo '</tr>';
+					
+					echo '<tr>';
+						echo '<td><font size="1">Medida</font></td>';
+						echo '<td><font size="1">Cant</font></td>';
+						echo '<td><font size="1">Hrs. Semanales</font></td>';
+						echo '<td>&nbsp;</td>'; // Celda vacía para alinear el botón
+					echo '</tr>';
+					
+					echo '<tr>';
+						echo '<td>';
+						// genera el combo box de MEDIDA
+						echo '<select size="1" name="vmedida" title="Seleccionar la magnitud que representa lo establecido como meta">';
+						echo '<option value="Alumnos">Alumnos</option>';
+						echo '<option value="Documento">Documento(s)</option>';
+						echo '<option value="Permanente">Permanente</option>';
+						echo '</select></td>';
+						
+						echo '<td><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vcant" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="5" maxlength="5"></font></td>';
+						
+						echo '<td><font size="1"><INPUT TYPE="text" class="ftexto" NAME="vhoras" title="Escribir la cantidad de horas que demanda la actividad" size="2" maxlength="2"></font></td>';
+
+						echo '<td>'; // Celda para el Botón
+						// CAPTURO EL IDDEPE
+						$sql="select Iddepe  from individual where codper =".$codper;
+						$result_iddepe=luis($conn, $sql);
+						while ($row=fetchrow($result_iddepe,-1)) {
+							$iddepe=$row[0];
+						}
+						cierra($result_iddepe);
+
+						echo '<input type="hidden" name="coduni" value="'.$codigo.'">';
+						echo '<input type="hidden" name="viddepe" value="'.$iddepe.'">';
+						echo '<input type="hidden" name="vagregar">';
+						echo '<input class="btns" type=button onClick="javascript:msj()" value="Agregar"/>';
+						echo '</td>';
+					echo '</tr>';
+				echo '</table>';
+
+
+		} //Fin Validacion Plani --Yoel 23-10-18
+		
+		// Se cierra el formulario solo si es TC
 		echo '</form>';
-	}
-}
-} //naty 27-08-2019
+		}
+	} // Fin de la condición para el formulario de "Agregar"
+} // Fin de la condición principal (TC, TP, DE)
 noconex($conn);
 }
 
@@ -6813,17 +6819,75 @@ if ($hn!=0) {echo '<table border="1" cellspacing="0" ><tr><td width="150" colspa
 
 		// Obtener el total de horas laborales y la dedicación	
 		//GABO
-		$conn=conex();
-		$sql="usp_Pit_ObtenerDatosResumen ".$codper.", ".$sem;
-		$result=luis($conn, $sql);
+		// --- INICIO: NUEVAS VALIDACIONES ---
+		$conn = conex();
+
+		// 1. Obtener la dedicación y las horas laborales del docente
+		$sql_resumen = "usp_Pit_ObtenerDatosResumen " . $codper . ", " . $sem;
+		$result_resumen = luis($conn, $sql_resumen);
+		$dedicacion = '';
 		$horas_laborales = 0;
-		$dedicacion = ''; // Variable para almacenar la dedicación
-		while ($row=fetchrow($result,-1))
-		{
-			$horas_laborales = $row[4];
-			$dedicacion = trim($row[3]); // Asumiendo que la dedicación está en la posición 3
+		while ($row = fetchrow($result_resumen, -1)) {
+			$dedicacion = trim($row[3]); // Dedicación (DE, TC, TP)
+			$horas_laborales = $row[4];  // Horas laborales (normalmente 40)
 		}
-		cierra($result);
+		cierra($result_resumen);
+
+		// 2. Obtener la dependencia del docente para verificar exención
+		$sql_dependencia = "SELECT (SELECT descrip FROM depe WHERE depe.iddepe = individual.iddepe) AS dependencia FROM individual WHERE codper = " . $codper;
+		$result_dependencia = luis($conn, $sql_dependencia);
+		$dependencia_docente = '';
+		while ($row_dep = fetchrow($result_dependencia, -1)) {
+			$dependencia_docente = $row_dep[0];
+		}
+		cierra($result_dependencia);
+
+		// 3. Calcular el total de horas (lectivas + no lectivas)
+		$total_horas = $hl + $hn;
+		if ($vah > 0) {
+			$total_horas = $hl + ($hn - $hora_descuento);
+		}
+
+		// 4. Verificar si el docente está exento (Rector o Vicerrector)
+		$es_exento = (
+			stripos($dependencia_docente, 'rectorado') !== false ||
+			stripos($dependencia_docente, 'vice rectorado') !== false
+		);
+
+		// 5. Aplicar las validaciones
+		if ($es_exento) {
+			// El docente está exento, no se aplican validaciones
+			$mensaje = ' Exento de carga académica-administrativa';
+		} else {
+			// Aplicar validaciones según la dedicación
+			if ($dedicacion === 'TP') {
+				// Validación para Tiempo Parcial
+				if ($total_horas >= 40) {
+					$mensaje = ' No debe alcanzar o superar las 40 horas por ser tiempo parcial';
+				} else {
+					$mensaje = ' Cumple con el límite de menos de 40 horas por ser tiempo parcial';
+				}
+			} elseif ($dedicacion === 'DE') {
+				// Validación para Dedicación Exclusiva
+				if ($total_horas < 40) {
+					$mensaje = ' No cumple con el mínimo de 40 horas requeridas para dedicación exclusiva';
+				} else {
+					$mensaje = ' Cumple con el mínimo de 40 horas requeridas para dedicación exclusiva';
+				}
+			} else {
+				// Para Tiempo Completo (TC) y otros, usar la lógica original
+				if ($total_horas > $horas_laborales) {
+					$mensaje = ' No debe de sobrepasar las ' . $horas_laborales . ' horas';
+				} else {
+					if ($total_horas < $horas_laborales) {
+						$mensaje = ' Debe de completar las ' . $horas_laborales . ' horas';
+					} else {
+						$mensaje = ' Cumple con las ' . $horas_laborales . ' horas';
+					}
+				}
+			}
+		}
+// --- FIN: NUEVAS VALIDACIONES ---
 
 		// Calcular el total de horas (lectivas + no lectivas)
 		$total_horas = $hl + $hn;
