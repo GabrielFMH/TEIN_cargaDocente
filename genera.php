@@ -2627,8 +2627,10 @@ function matricula($codigo, $sex)
 
 
 /*AGREGUE LA VARIALBE $file_php PARA DETERMINAR SI ESTOY EN EL ARCHIVO estadistica.php O buscab.php*/
-function individual($codigo, $sex, $codper, $busca, $file_php,$sem,$semestre_denominacion = "NO_DEFINIDO")//GABO AGREGO SEMESTRE DENOMINACION
+function individual($codigo, $sex, $codper, $busca, $file_php,$sem, $semestre_denominacion, $sin_semestres = false)//GABO AGREGO SEMESTRE DENOMINACION Y SIN_SEMESTRES
 {
+ 	// Variable para mantener el estado en la URL de los formularios
+ 	$url_param_semestre = $sin_semestres ? '&sin_semestres=1' : '';
 
 	//Validacion Plani --Yoel 23-10-18
 	$vUno = $busca;
@@ -2968,21 +2970,29 @@ $total_horas_lectivas_cuadro = round($total_horas_lectivas_cuadro / 4);
 /*FORMULARIO DE CARGA NO LECTIVA , LISTA TODAS LAS ACTIVIDADES INGRESADAS EN EL FORMULARIO*/
 
 // MODIFICACIÓN 1: Se cambia la condición para que incluya a los docentes TP y DE.
-// Esto permite que el código de cálculo de horas y el resumen final se ejecuten para ellos.
+// Esto permite que el código de cálculo de horas y el resumen final se ejecuten para ellos.  GABO
 if ($ValidarTiempoCompleto == "TC" || $ValidarTiempoCompleto == "TP" || $ValidarTiempoCompleto == "DE") {
 
 	// MODIFICACIÓN 2: Se envuelve la apertura del FORMULARIO en una condición.
 	// Solo los docentes TC verán los formularios y podrán interactuar con ellos.
+	
+
 	if ($ValidarTiempoCompleto == "TC") {
-		if ($busca==0)
+		if ($busca==0) //GABO
 		{
-		echo '<FORM METHOD="POST" ACTION="carga.php?tr=1&sesion='.$sex.'&x='.$sem.'" name="frmindiv">';
+			// Añadimos la variable $url_param_semestre al final de la URL
+			echo '<FORM METHOD="POST" ACTION="carga.php?tr=1&sesion='.$sex.'&x='.$sem.$url_param_semestre.'" name="frmindiv">';
 		}
 
 		if ($busca==1)
 		{
-		echo '<FORM METHOD="POST" ACTION="buscab.php?tr=1&sesion='.$sex.'" name="frmindiv">';
+			// Hacemos lo mismo aquí
+			echo '<FORM METHOD="POST" ACTION="buscab.php?tr=1&sesion='.$sex.$url_param_semestre.'" name="frmindiv">';
 		}
+	}
+
+	if ($sin_semestres) {
+		echo '<input type="hidden" name="sin_semestres" value="1">';
 	}
 
 	// El siguiente bloque es solo para TC, ya que la condición original se mantiene.
@@ -3002,7 +3012,11 @@ if ($ValidarTiempoCompleto == "TC" || $ValidarTiempoCompleto == "TP" || $Validar
 
 	}
 		/*LA VARIABLE $semestre_acti INDICA EL SEMESTRE AL QUE CORRESPONDE LA ACTIVIDAD*/
-		$semestre_acti=$semestre;
+		if (!$sin_semestres) {
+		    $semestre_acti=$semestre;
+		} else {
+		    $semestre_acti = "TODOS LOS SEMESTRES";
+		}
 		$fecha_semestre=$fecha;
 		/*LA VARIABLE $codigo_acti INDICA EL CODIGO AL QUE CORRESPONDE LA ACTIVIDAD*/
 		$codigo_acti=$codigoo;
@@ -3153,46 +3167,45 @@ if ($ValidarTiempoCompleto == "TC" || $ValidarTiempoCompleto == "TP" || $Validar
 		if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
 		{
 
-			// --- INICIO: Filtro por Mes --- GABO
-			// --- DEPURACIÓN: Mostrar el valor de $semestre_acti ---
-		//	echo '<div style="padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; margin: 10px 0; font-family: monospace; font-size: 14px; color: #155724;">';
-		//echo '<strong>INFO:</strong> Valor de $semestre_denominacion recibido = <code>' . htmlspecialchars($semestre_denominacion) . '</code>';
-		//echo '</div>';
+						// --- INICIO: Filtro por Mes --- GABO
+			if (!$sin_semestres) {
 
-	$semestre_acti = $semestre;
-			// --- FIN DEPURACIÓN ---
-		echo '<div style="margin: 20px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">';
-		echo '<label for="filtro_mes_individual" style="font-weight: bold; margin-right: 10px;">Filtrar Actividades por Mes:</label>';
-		echo '<select id="filtro_mes_individual" name="filtro_mes_individual" style="padding: 5px;">';
-		echo '<option value="">-- Mostrar Todas --</option>';
 
-		// Definir los meses según el semestre
-		$meses_semestre = [];
-		switch ($semestre_acti) {
-			case '2025-I':
-				$meses_semestre = ['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio'];
-				break;
-			case '2025-II':
-				$meses_semestre = ['Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-				break;
-			case '2025-REC':
-				$meses_semestre = ['Diciembre', 'Enero', 'Febrero'];
-				break;
-			case '2025-INT':
-				$meses_semestre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-				break;
-			default:
-				// Si no coincide con ningún semestre conocido, mostrar todos los meses
-				$meses_semestre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-		}
+				$semestre_acti = $semestre;
+						// --- FIN DEPURACIÓN ---
+				echo '<div style="margin: 20px 0; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">';
+				echo '<label for="filtro_mes_individual" style="font-weight: bold; margin-right: 10px;">Filtrar Actividades por Mes:</label>';
+				echo '<select id="filtro_mes_individual" name="filtro_mes_individual" style="padding: 5px;">';
+				echo '<option value="">-- Mostrar Todas --</option>';
 
-		foreach ($meses_semestre as $mes) {
-			echo '<option value="' . $mes . '">' . $mes . '</option>';
-		}
+				// Definir los meses según el semestre
+				$meses_semestre = [];
+				switch ($semestre_acti) {
+					case '2025-I':
+						$meses_semestre = ['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio'];
+						break;
+					case '2025-II':
+						$meses_semestre = ['Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+						break;
+					case '2025-REC':
+						$meses_semestre = ['Diciembre', 'Enero', 'Febrero'];
+						break;
+					case '2025-INT':
+						$meses_semestre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+						break;
+					default:
+						// Si no coincide con ningún semestre conocido, mostrar todos los meses
+						$meses_semestre = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+				}
 
-		echo '</select>';
-		echo '</div>';
-		// --- FIN: Filtro por Mes ---
+				foreach ($meses_semestre as $mes) {
+					echo '<option value="' . $mes . '">' . $mes . '</option>';
+				}
+
+				echo '</select>';
+				echo '</div>';
+			}
+			// --- FIN: Filtro por Mes ---
 
 			// MODIFICACIÓN 3: Se envuelve el formulario del "acordeón" en una condición
 			// para que solo se muestre a los docentes TC.
@@ -4275,20 +4288,21 @@ cierra($result_detalle_trab);
 
 					if (isset($_POST["datebox"])==true){ $dia=$_POST["datebox"]; }
 					if (isset($_POST["datebox2"])==true){ $dia2=$_POST["datebox2"]; }
-
+					if ($sin_semestres != 1) {
 					// Fecha Inicio
 					echo '<td colspan="2">'; // Abarca 2 columnas
 					echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
 					?>
-					 <input name="datebox" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox,'dd/mm/yyyy',this)" type="text" value=<? echo $dia ?>>
+					 <input name="datebox" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox,'dd/mm/yyyy',this)" type="text" value=<?php echo $dia; ?>>
 					&nbsp;&nbsp;
-					<?
+					<?php
 					// Fecha Final
 					echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Final:</font>';
 					?>
-					 <input name="datebox2" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox2,'dd/mm/yyyy',this)" type="text" value=<? echo $dia2 ?> >
-					<?
+					 <input name="datebox2" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox2,'dd/mm/yyyy',this)" type="text" value=<?php echo $dia2; ?> >
+					<?php
 					echo '</td>';
+					}
 
 					// Porcentaje de avance
 					echo '<td colspan="2">'; // Abarca 2 columnas
@@ -5046,7 +5060,7 @@ if ($_POST["vagregar2"]=="Agregar")
 
 	echo '<td width="150" >
 			<font size="1">';
-/*				echo'<textarea name="vdetalle" title="Escribir la importancia de la actividad" cols="100" rows="7" ></textarea>';*/
+	/*				echo'<textarea name="vdetalle" title="Escribir la importancia de la actividad" cols="100" rows="7" ></textarea>';*/
 
 
 	echo '<INPUT TYPE="text" class="ftexto" NAME="vdetalle" title="Escribir el detalle de la actividad" size="133" maxlength="100">';
@@ -5630,7 +5644,7 @@ function view_trab_informe_vice($idtrab,$sex)
 
 /*Gary - Añadi esta funcion para mostrar los horarios por el semestre seleccionado en el PIT para el modulo de estadistica varia en el procedimiento*/
 /*AGREGUE LA VARIALBE $file_php PARA DETERMINAR SI ESTOY EN EL ARCHIVO estadistica.php O buscab.php*/
-function individualPIT($codigo, $sex, $codper, $busca, $file_php,$sem,$semestre_denominacion = "NO_DEFINIDO") //GABO AÑADIO SEMESTRE_DENOMINACION
+function individualPIT($codigo, $sex, $codper, $busca, $file_php,$sem) //GABO AÑADIO SEMESTRE_DENOMINACION
 /*function individual($codigo, $sex, $codper, $busca);*/
 {
 $conn=conex();
@@ -7026,21 +7040,25 @@ echo '<table border="0" cellspacing="2" bgcolor="#CCE6FF">';
 	}
 	/*+++++++++++*/
 
-	/*echo '<tr>';*/
-	echo'<td> <font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
-		?>
-		 <input name="datebox" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox,'dd/mm/yyyy',this)" type="text" value=<? echo $dia ?>>
-		<?
-		 /*echo '</td>';*/
-		/*echo '<td>';*/
-		echo '&nbsp;&nbsp;&nbsp;';
-	echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Final:</font>';
-		?>
-         <input name="datebox2" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox2,'dd/mm/yyyy',this)" type="text" value=<? echo $dia2 ?> >
-
-		<?
-		 echo '</td>';
-
+    /*
+    * INICIO DE LA MODIFICACIÓN:
+    * Se ocultan los campos de fecha si la variable $sin_semestre es igual a 1.
+    */
+    if ($sin_semestre != 1) {
+        echo '<td> <font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
+        ?>
+            <input name="datebox" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox,'dd/mm/yyyy',this)" type="text" value=<?php echo $dia; ?>>
+        <?php
+        echo '&nbsp;&nbsp;&nbsp;';
+        echo '<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Final:</font>';
+        ?>
+            <input name="datebox2" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(datebox2,'dd/mm/yyyy',this)" type="text" value=<?php echo $dia2; ?> >
+        <?php
+        echo '</td>';
+    }
+    /*
+    * FIN DE LA MODIFICACIÓN
+    */
 
 	echo '</tr>';
 	/*FIN DE CODIGO PARA CALENDARIO*/

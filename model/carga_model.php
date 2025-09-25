@@ -55,6 +55,7 @@ class CargaModel
         }
     }
 
+    // GABO - Validando porcentaje total
     // Método para validar que la suma de porcentajes no exceda 100%
     public function validarPorcentajeTotal($codigo, $idsem, $nuevoPorcentaje, $idtrabExcluir = null)
     {
@@ -71,6 +72,7 @@ class CargaModel
         return ($totalActual + $nuevoPorcentaje) <= 100;
     }
 
+    // GABO - Validando horas lectivas
     public function validacionHorasLectivas($codigo, $idsem, $horasNuevas, $idtrabExcluir = null)
     {
         // Obtener el límite dinámico de horas lectivas del cuadro de detalle
@@ -124,6 +126,7 @@ class CargaModel
         return (int)$numero;
     }
 
+    // GABO - Validando carga horaria
     // Método para validar carga horaria según reglas (20h TC, 40h totales, etc.)
     public function validarCargaHoraria($codigo, $idsem, $horasNuevas)
     {
@@ -564,6 +567,7 @@ class CargaModel
         $this->execute_query($sql);
     }
 
+    // GABO - Validando porcentaje en historial
     public function registrarHistorial($codigox, $idtrab, $vnominfo_historial, $vdirigido_historial, $vcargo_historial, $vremitente_historial, $vdetalle_historial, $vporcentaje_historial, $dia)
     {
         // Validar que el porcentaje sea numérico
@@ -575,6 +579,7 @@ class CargaModel
         $this->execute_query($sql);
     }
 
+    // En CargaModel.php
     public function eliminarTrabajo($codigox, $idtrab, $msemestre)
     {
         $sql = "delete from trab where codigo={$codigox} and idtrab={$idtrab}";
@@ -583,8 +588,11 @@ class CargaModel
         $sql_historial = "delete from trab_historial where idtrab={$idtrab}";
         $this->execute_query($sql_historial);
 
-        $sql_detalle = "delete from detalle_trab where codigo={$codigox} and idsem={$msemestre}";
-        $this->execute_query($sql_detalle);
+        // Solo ejecutar esta consulta si se proporcionó un semestre válido
+        if ($msemestre !== null && is_numeric($msemestre)) {
+            $sql_detalle = "delete from detalle_trab where codigo={$codigox} and idsem={$msemestre}";
+            $this->execute_query($sql_detalle);
+        }
     }
 
     public function editarTrabajo($codigox, $idtrab, $vacti_editar, $vdacti_editar, $vimporta_editar, $vmedida_editar, $vcant_editar, $vhoras_editar, $vcalif_editar, $vmeta_editar, $vdatebox_editar, $vdatebox2_editar, $vporcentaje_editar, $vtipo_actividad_editar = '', $vdetalle_actividad_editar = '', $vdependencia_editar = '')

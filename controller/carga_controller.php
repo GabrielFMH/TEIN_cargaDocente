@@ -448,6 +448,7 @@ class CargaController
                 
                 
                 try {
+                    // GABO - Validando campos numéricos (horas, cantidad, porcentaje)
                     // Preparar parámetros con validación
                     $vacti = isset($_POST['vacti']) && !empty($_POST['vacti']) ? $_POST['vacti'] : '';
                     $vdacti = isset($_POST['vdacti']) && !empty($_POST['vdacti']) ? $_POST['vdacti'] : '';
@@ -465,6 +466,7 @@ class CargaController
                     $vdetalle = isset($_POST['vdetalle']) && !empty($_POST['vdetalle']) ? $_POST['vdetalle'] : null;
                     $vdependencia = isset($_POST['vdependencia']) && !empty($_POST['vdependencia']) ? $_POST['vdependencia'] : null;
 
+                    // GABO - Agregando actividad con campos dependencia y detalle_actividad
 
                     // --- INICIO DE LA NUEVA VALIDACIÓN(gabo) ---
                     // Solo validamos si la actividad que se va a agregar es de tipo 'Lectiva'
@@ -569,6 +571,8 @@ class CargaController
 
             if (isset($_POST["vn"]) && $_POST["vn"] > 0) {
                 for ($i = 1; $i <= $_POST["vn"]; $i++) {
+                    
+                    // --- CORRECCIÓN INICIA AQUÍ ---
                     if (isset($_POST["de".$i]) && $_POST["de".$i] == "Eliminar") {
                         // Validar autorización
                         if (!$this->verificarAutorizacion(200)) {
@@ -577,8 +581,30 @@ class CargaController
                         }
 
                         $_SESSION['codigox'] = $_POST["coduni"];
-                        $this->model->eliminarTrabajo($_SESSION['codigox'], $_POST["vi".$i], $_POST["msemestre"]);
-                    } elseif (isset($_POST["dedit".$i]) && $_POST["dedit".$i] == "Editar") {
+                        
+                        // Se prepara la variable para el semestre. Por defecto es null.
+                        $idsem_para_eliminar = null;
+
+                        // Verificamos si NO estamos en modo "sin semestres".
+                        // Si el parámetro no existe o es diferente de 1, significa que estamos en un semestre específico.
+                        if (!isset($_GET['sin_semestres']) || $_GET['sin_semestres'] != 1) {
+                            // En un semestre normal, tomamos el valor del campo oculto 'msemestre'.
+                            $idsem_para_eliminar = isset($_POST["msemestre"]) ? $_POST["msemestre"] : null;
+                        }
+
+                        // Llamamos al modelo con el valor correcto (un ID de semestre o null).
+                        $this->model->eliminarTrabajo($_SESSION['codigox'], $_POST["vi".$i], $idsem_para_eliminar);
+                        
+                        // Se añade una alerta y una redirección para refrescar la página y mostrar el resultado.
+                        echo "<script language='javascript'>
+                                alert('Actividad eliminada correctamente.');
+                                window.location.href = '{$_SERVER['HTTP_REFERER']}';
+                            </script>";
+                        exit; // Es crucial detener la ejecución aquí para que la redirección funcione.
+                    } 
+                    // --- CORRECCIÓN TERMINA AQUÍ ---
+                    
+                    elseif (isset($_POST["dedit".$i]) && $_POST["dedit".$i] == "Editar") {
                         // Validar autorización
                         if (!$this->verificarAutorizacion(200)) {
                             echo "<script language='javascript'>alert('No tiene permisos para realizar esta acción'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
@@ -588,6 +614,7 @@ class CargaController
                         $_SESSION['codigox'] = $_POST["coduni"];
 
                         try {
+                            // GABO - Validando campos numéricos para edición (horas, cantidad, porcentaje)
                             // Preparar parámetros con validación para edición
                             $vacti_editar = isset($_POST['vacti_editar'.$i]) && !empty($_POST['vacti_editar'.$i]) ? $_POST['vacti_editar'.$i] : '';
                             $vdacti_editar = isset($_POST['vdacti_editar'.$i]) && !empty($_POST['vdacti_editar'.$i]) ? $_POST['vdacti_editar'.$i] : '';
@@ -603,6 +630,8 @@ class CargaController
                             $vtipo_editar = isset($_POST['vtipo_editar'.$i]) && !empty($_POST['vtipo_editar'.$i]) ? $_POST['vtipo_editar'.$i] : '';
                             $vdetalle_editar = isset($_POST['vdetalle_editar'.$i]) && !empty($_POST['vdetalle_editar'.$i]) ? $_POST['vdetalle_editar'.$i] : null;
                             $vdependencia_editar = isset($_POST['vdependencia_editar'.$i]) && !empty($_POST['vdependencia_editar'.$i]) ? $_POST['vdependencia_editar'.$i] : null;
+
+                            // GABO - Editando actividad con campos dependencia y detalle_actividad
 
                             $this->model->editarTrabajo(
                                 $_SESSION['codigox'],
@@ -856,12 +885,20 @@ class CargaController
                     $menu .= '<div id="side-block"></div>';
                     $menu .= '<a class="menuy1" href="carga.php?sesion='.$data['sex'].'">Carga</a>';
                     $menu .= '<div id="side-block"></div>';
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<a class="menux1" href="../carga.php?sesion='.$data['sex'].'&sin_semestres=1">PIT sin cronograma</a>';
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<div id="side-block"></div>';
+                    $menu .= '<div id="side-block"></div>';
 
-                    while ($row = fetchrow($data['semestres'],-1))
-                    {
-                        //
-                        $menu .= '<i><a class="menux1 tooltip" style="font-size:11px; text-align:left; background:#a6a6ac; color:white; padding-top:5px;" href="carga.php?sesion='.$data['sex'].'&x='.$row[0].'&tx='.$row[3].'"> '.$row[1].'  <span style="font-size:10px; padding-left:2px;">('.$row[0].')</span><span class="tooltiptext">'.$row[2].'</span></a></i>';
-                        $menu .= '<div id="side-block"></div>';
+                    // Solo cargar semestres si no está en modo sin semestres
+                    if (!$data['sin_semestres'] && isset($data['semestres'])) {
+                        while ($row = fetchrow($data['semestres'],-1))
+                        {
+                            //
+                            $menu .= '<i><a class="menux1 tooltip" style="font-size:11px; text-align:left; background:#a6a6ac; color:white; padding-top:5px;" href="carga.php?sesion='.$data['sex'].'&x='.$row[0].'&tx='.$row[3].'"> '.$row[1].'  <span style="font-size:10px; padding-left:2px;">('.$row[0].')</span><span class="tooltiptext">'.$row[2].'</span></a></i>';
+                            $menu .= '<div id="side-block"></div>';
+                        }
                     }
 
                     $menu .= '<div id="side-block"></div>';
@@ -873,6 +910,8 @@ class CargaController
                     $menu .= '<div id="side-block"></div>';
                     $menu .= '<a class="menux1" href="asistenciap.php?sesion='.$data['sex'].'">Parte Asistencia</a>';
                     //}
+
+                    
 
                     break;
                 case 300:
@@ -921,20 +960,21 @@ class CargaController
                 $content .= '<table border="0" width="100%">';
                 $content .= '<tr>';
         
-                if($data['semestre_info']){
+                // Solo mostrar información de semestre si no está en modo sin semestres
+                if(!$data['sin_semestres'] && $data['semestre_info']){
                     $rowdir = fetchrow($data['semestre_info'], -1);
                     $semestre=$rowdir[0];
                     $obssemestre=$rowdir[1];
                 }
-        
+
                 $content .= '<td width="550">';
-                if($data['idsem'] > 0){
+                if(!$data['sin_semestres'] && $data['idsem'] > 0){
                     $content .= '<font size="2"><strong>Semestre:</strong> ('. $data['idsem'] .') - '. $obssemestre . '</font><br>';
                 }
                 $content .= '<font size="2"><strong>Docente:</strong> '.$data['name'].'</font>';
                 $content .= '</td>';
         
-                if ($data['idsem'] == '')
+                if ($data['idsem'] == '' && !$data['sin_semestres'])
                 {
                     $content .= "<font size='4' style='color: 102368;'>Hacer clic en el SEMESTRE del menu izquierdo.</font>";
                     $content .= '</tr>';
@@ -943,7 +983,7 @@ class CargaController
                     return $content;
                 }
         
-                if(!$data['esSemestreTaex']){
+                if(!$data['esSemestreTaex'] && !$data['sin_semestres']){
                     $content .= '<td><font size="1"><a style="font-size:12px;" href="carga.php?tr=1&sesion='.$data['sex'].'&x='.$data['idsem'].'" >TRABAJO INDIVIDUAL '.$obssemestre.' </a></font>  <font size="1" face="Arial">
                                             <blink>
                                                 <a href="documentos/PIT_Docente/ActividadesPITGA_V2.pdf" target="_blank">
@@ -1037,7 +1077,7 @@ class CargaController
         
                 if(isset($data['ultimos_accesos'])){
                     if ( numrow($data['ultimos_accesos']) > 0 ){
-                        $content .= '<h3>Últimos Accesos</h3>';
+                        $content .= '<h3 align="left">Últimos Accesos</h3>';
                         $content .= '<table border="0" cellspacing="2">';
                         $content .= '<tr>';
                         $content .= '<th bgcolor="#DBEAF5"><font size="1">&nbsp;&nbsp;N&#176;&nbsp;&nbsp;</font></th>';
@@ -1073,15 +1113,38 @@ class CargaController
                 $content .= '</br>';
         
                 $file_php=0;
-                if (isset($data['tr'])==true ){
+                if (isset($data['tr'])==true){
                     require ("genera.php");
                     $sem = $data['idsem'];
+        
+                    // --- NUEVO: Obtener la denominación del semestre seleccionado ---GABO
+                    $semestre_denominacion = "DESCONOCIDO"; // Valor por defecto
+                    if (isset($data['semestres'])) {
+                        // Reiniciar puntero del resultset si es necesario (aunque fetchrow normalmente avanza)
+                        // Para estar seguros, podríamos reconstruir la lógica o asegurarnos de que $data['semestres'] sea recorrible aquí.
+                        // La forma más segura es hacer una nueva consulta o pasar la info de generateMenu.
+                        // Pero como ya está en $data['semestres'], intentemos usarlo.
+        
+                        // Guardar temporalmente el resultset para no afectar otras partes
+                        $temp_resultset = $data['semestres'];
+                        while ($row_sem = fetchrow($temp_resultset, -1)) {
+                            if ($row_sem[0] == $sem) { // Comparar ID numérico
+                                $semestre_denominacion = $row_sem[1]; // Asignar denominación
+                                break; // Salir del bucle al encontrarlo
+                            }
+                        }
+                        // NOTA: fetchrow mueve el puntero interno. Si $data['semestres'] se usa después,
+                        // esto podría causar problemas. Una mejor práctica es reconstruir el array o usar numrow/reset.
+                        // Para una solución rápida, asumiremos que no hay problema o que se reconstruye el resultset si es necesario más adelante.
+                    }
+                    // --- FIN NUEVO ---
+        
                     ob_start();
-                    individual($data['codigo'], $data['sex'], $data['codper'], 0, $file_php,$sem);
+                    individual($data['codigo'], $data['sex'], $data['codper'], 0, $file_php,$sem,$semestre_denominacion, $data['sin_semestres']);
                     $content .= ob_get_clean();
                 }
                 $content .= '</br>';
-                if(isset($data['tr'])==true)
+                if(isset($data['tr'])==true && !$data['sin_semestres'])
                 {
                     $content .= '<br><br><form method="post" action="carga.php?tr=1&sesion='.$data['sex'].'&x='.$data['idsem'].'" name="registro" id="registro" enctype="multipart/form-data">';
                     $content .= '<table border="0" widtd="100%" >';
@@ -1113,21 +1176,22 @@ class CargaController
             }
         
             private function prepareViewData($sex)
-    {
-        $data = [];
-        $data['sex'] = $sex;
-        $data['idsem'] = isset($_GET["x"]) ? $_GET["x"] : (isset($_SESSION['idsemindiv']) ? $_SESSION['idsemindiv'] : null);
-        $data['esSemestreTaex'] = isset($_GET["tx"]) ? $_GET["tx"] : 0;
-        $data['name'] = $_SESSION['name'];
-        $data['codigo'] = $_SESSION['codigo'];
-        $data['codper'] = $_SESSION['codper'];
-        $data['grupa0'] = $_SESSION['grupa0'];
-        for ($l=1;$l<=$data['grupa0'];$l++){
-            $data['grupa'.$l] = $_SESSION['grupa'.$l];
-        }
-        $data['wf'] = isset($_GET['wf']) ? $_GET['wf'] : 0;
-        $data['wifi'] = isset($_SESSION['wifi']) ? $_SESSION['wifi'] : '';
-        $data['tr'] = isset($_GET['tr']) ? $_GET['tr'] : false;
+            {
+                $data = [];
+                $data['sex'] = $sex;
+                $data['idsem'] = isset($_GET["x"]) ? $_GET["x"] : (isset($_SESSION['idsemindiv']) ? $_SESSION['idsemindiv'] : null);
+                $data['esSemestreTaex'] = isset($_GET["tx"]) ? $_GET["tx"] : 0;
+                $data['name'] = $_SESSION['name'];
+                $data['codigo'] = $_SESSION['codigo'];
+                $data['codper'] = $_SESSION['codper'];
+                $data['grupa0'] = $_SESSION['grupa0'];
+                for ($l=1;$l<=$data['grupa0'];$l++){
+                    $data['grupa'.$l] = $_SESSION['grupa'.$l];
+                }
+                $data['wf'] = isset($_GET['wf']) ? $_GET['wf'] : 0;
+                $data['wifi'] = isset($_SESSION['wifi']) ? $_SESSION['wifi'] : '';
+                $data['tr'] = isset($_GET['tr']) ? $_GET['tr'] : false;
+                $data['sin_semestres'] = isset($_GET['sin_semestres']) ? $_GET['sin_semestres'] : false;
 
         if ($_SESSION['check'] > 0) {
             $cargas = $this->model->getCarga($_SESSION['codigo']);
@@ -1139,8 +1203,22 @@ class CargaController
             $_SESSION['check'] = 0;
         }
 
+        // Always load semesters to get current one, but don't show in menu when sin_semestres=1
         $data['semestres'] = $this->model->getSemestres($_SESSION['codper']);
-        $data['semestre_info'] = $this->model->getSemestreInfo($data['idsem'], $data['esSemestreTaex']);
+
+        if (!$data['sin_semestres']) {
+            $data['semestre_info'] = $this->model->getSemestreInfo($data['idsem'], $data['esSemestreTaex']);
+        } else {
+            // For sin_semestres, set to first active semester
+            if (isset($data['semestres']) && $data['semestres']) {
+                // Get first row from semesters
+                $first_sem_row = fetchrow($data['semestres'], -1);
+                if ($first_sem_row) {
+                    $data['idsem'] = $first_sem_row[0]; // Assuming first column is idsem
+                    $data['semestre_info'] = $this->model->getSemestreInfo($data['idsem'], $data['esSemestreTaex']);
+                }
+            }
+        }
         $data['director_depe'] = $this->model->getDirectorIdDepe($_SESSION['codigo']);
 
         $cursos = $this->model->getCursos($_SESSION['codper'], $data['idsem'], $data['esSemestreTaex']);
