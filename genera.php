@@ -2754,16 +2754,52 @@ $kl=0;
 
 $conn=conex();
 // exit;
-if($codigo==39222800){
-	$sql="exec trabindividual_v4 ".$codigo.",".$sem;
-//echo $codigo.",".$sem;
+
+// --- INICIO DE LA MODIFICACIÓN 1 ---
+
+// Si estamos en modo "sin semestres", usamos una consulta directa que busca por fecha_inicio
+if ($sin_semestres) {
+    // Esta consulta directa busca en la tabla `trab` los registros que corresponden
+    // a actividades sin cronograma (con fecha en 1900 o idsem 0) y devuelve una estructura
+    // similar a la que el resto del código espera.
+    // Nota: Llenamos las columnas faltantes con valores por defecto o de la propia tabla.
+    $sql = "
+        SELECT
+            '' AS col0,                         -- Columna 0: Vacía, no utilizada
+            t.seccion AS seccion,               -- Columna 1: seccion
+            t.dactividad AS curso,              -- Columna 2: dactividad (nombre del curso/actividad)
+            '' AS col3,                         -- Columna 3: Vacía, no utilizada
+            t.horas AS horas,                   -- Columna 4: horas
+            t.idtrab AS idtrab,                 -- Columna 5: idtrab (usado como identificador único)
+            t.cant AS alumnos,                  -- Columna 6: cant (usado como 'Alumnos')
+            0 AS dia_semana,                    -- Columna 7: día de la semana (por defecto 0, sin horario)
+            '' AS hora_inicio,                  -- Columna 8: hora_inicio
+            '' AS hora_fin,                     -- Columna 9: hora_fin
+            t.dependencia AS dependencia,       -- Columna 10: dependencia
+            '' AS aula                          -- Columna 11: aula
+        FROM trab t
+        WHERE t.codigo = " . $codigo . "
+          AND (CAST(t.fecha_inicio AS DATE) = '1900-01-01' OR t.idsem = 0)
+        ORDER BY t.idtrab ASC
+    ";
+} else {
+    // Si no, usamos la lógica original con el procedimiento almacenado
+    if($codigo==39222800){
+        $sql="exec trabindividual_v4 ".$codigo.",".$sem;
+    }
+    else{
+        $sql="exec trabindividual_v4 ".$codigo.",".$sem;
+    }
 }
-else{
-	$sql="exec trabindividual_v4 ".$codigo.",".$sem;
-}
+
+// --- FIN DE LA MODIFICACIÓN 1 ---
+
 // echo $sql;
 // exit;
 $resulta=luis($conn, $sql);
+
+
+
 $idc="";
 $fl=0;
 
