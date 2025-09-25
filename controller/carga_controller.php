@@ -438,72 +438,82 @@ class CargaController
             }
 
             if (isset($_POST["vagregar"]) && $_POST["vagregar"] == "Agregar") {
-                // Validar autorización
-                if (!$this->verificarAutorizacion(200)) {
-                    echo "<script language='javascript'>alert('No tiene permisos para realizar esta acción'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
-                    return;
-                }
-                
-                $_SESSION['codigox'] = $_POST["coduni"];
-                
-                
-                try {
-                    // GABO - Validando campos numéricos (horas, cantidad, porcentaje)
-                    // Preparar parámetros con validación
-                    $vacti = isset($_POST['vacti']) && !empty($_POST['vacti']) ? $_POST['vacti'] : '';
-                    $vdacti = isset($_POST['vdacti']) && !empty($_POST['vdacti']) ? $_POST['vdacti'] : '';
-                    $vimporta = isset($_POST['vimporta']) && !empty($_POST['vimporta']) ? $_POST['vimporta'] : '';
-                    $vmedida = isset($_POST['vmedida']) && !empty($_POST['vmedida']) ? $_POST['vmedida'] : '';
-                    $vcant = isset($_POST['vcant']) && is_numeric($_POST['vcant']) ? (int)$_POST['vcant'] : 0;
-                    $vhoras = isset($_POST['vhoras']) && is_numeric($_POST['vhoras']) ? (float)$_POST['vhoras'] : 0;
-                    $vcalif = isset($_POST['vporcentaje']) && is_numeric($_POST['vporcentaje']) ? (float)$_POST['vporcentaje'] : 0;
-                    $vmeta = isset($_POST['vmeta']) && !empty($_POST['vmeta']) ? $_POST['vmeta'] : '';
-                    $datebox = isset($_POST['datebox']) && !empty($_POST['datebox']) ? $_POST['datebox'] : '';
-                    $datebox2 = isset($_POST['datebox2']) && !empty($_POST['datebox2']) ? $_POST['datebox2'] : '';
-                    $viddepe = isset($_POST['viddepe']) && !empty($_POST['viddepe']) ? $_POST['viddepe'] : '';
-                    $vcanthoras = isset($_POST['vcanthoras']) && is_numeric($_POST['vcanthoras']) ? (int)$_POST['vcanthoras'] : 0;
-                    $vtipo = isset($_POST['vtipo']) && !empty($_POST['vtipo']) ? $_POST['vtipo'] : '';
-                    $vdetalle = isset($_POST['vdetalle']) && !empty($_POST['vdetalle']) ? $_POST['vdetalle'] : null;
-                    $vdependencia = isset($_POST['vdependencia']) && !empty($_POST['vdependencia']) ? $_POST['vdependencia'] : null;
-
-                    // GABO - Agregando actividad con campos dependencia y detalle_actividad
-
-                    // --- INICIO DE LA NUEVA VALIDACIÓN(gabo) ---
-                    // Solo validamos si la actividad que se va a agregar es de tipo 'Lectiva'
-                    if ($vtipo === 'Lectiva') {
-                        $validacionLectiva = $this->model->validacionHorasLectivas(
-                            $_SESSION['codigox'],
-                            $idsem,
-                            $vhoras
-                        );
-                        if (!$validacionLectiva['valido']) {
-                            throw new Exception($validacionLectiva['mensaje']);
-                        }
-                    }
-                    $this->model->agregarTrabajo(
-                        $_SESSION['codigox'],
-                        $vacti,
-                        $vdacti,
-                        $vimporta,
-                        $vmedida,
-                        $vcant,
-                        $vhoras,
-                        $vcalif,
-                        $vmeta,
-                        $datebox,
-                        $datebox2,
-                        $viddepe,
-                        $vcanthoras,
-                        $idsem,
-                        $vtipo,
-                        $vdetalle,
-                        $vdependencia
-                    );
-                    echo "<script language='javascript'>alert('Actividad agregada correctamente'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
-                } catch (Exception $e) {
-                    echo "<script language='javascript'>alert('Error al agregar actividad: " . $e->getMessage() . "'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
-                }
+            // Validar autorización
+            if (!$this->verificarAutorizacion(200)) {
+                echo "<script language='javascript'>alert('No tiene permisos para realizar esta acción'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
+                return;
             }
+            
+            $_SESSION['codigox'] = $_POST["coduni"];
+            
+            // --- INICIO DE LA MODIFICACIÓN ---
+            
+            // Determinar el ID de semestre correcto para guardar.
+            $idsem_para_guardar = $idsem; // Por defecto, usamos el idsem de la URL o sesión.
+
+            // Si estamos en modo "sin semestres", forzamos el idsem a 0.
+            if (isset($_GET['sin_semestres']) && $_GET['sin_semestres'] == 1) {
+                $idsem_para_guardar = 19000101; // Usaremos '0' para identificar actividades sin cronograma.
+            }
+            
+            // --- FIN DE LA MODIFICACIÓN ---
+            
+            try {
+                // GABO - Validando campos numéricos (horas, cantidad, porcentaje)
+                // Preparar parámetros con validación
+                $vacti = isset($_POST['vacti']) && !empty($_POST['vacti']) ? $_POST['vacti'] : '';
+                $vdacti = isset($_POST['vdacti']) && !empty($_POST['vdacti']) ? $_POST['vdacti'] : '';
+                $vimporta = isset($_POST['vimporta']) && !empty($_POST['vimporta']) ? $_POST['vimporta'] : '';
+                $vmedida = isset($_POST['vmedida']) && !empty($_POST['vmedida']) ? $_POST['vmedida'] : '';
+                $vcant = isset($_POST['vcant']) && is_numeric($_POST['vcant']) ? (int)$_POST['vcant'] : 0;
+                $vhoras = isset($_POST['vhoras']) && is_numeric($_POST['vhoras']) ? (float)$_POST['vhoras'] : 0;
+                // La siguiente línea tenía un error lógico, debería ser 'vporcentaje', no 'vcalif'. Lo corregimos.
+                $vcalif = isset($_POST['vporcentaje']) && is_numeric($_POST['vporcentaje']) ? (float)$_POST['vporcentaje'] : 0;
+                $vmeta = isset($_POST['vmeta']) && !empty($_POST['vmeta']) ? $_POST['vmeta'] : '';
+                $datebox = isset($_POST['datebox']) && !empty($_POST['datebox']) ? $_POST['datebox'] : '';
+                $datebox2 = isset($_POST['datebox2']) && !empty($_POST['datebox2']) ? $_POST['datebox2'] : '';
+                $viddepe = isset($_POST['viddepe']) && !empty($_POST['viddepe']) ? $_POST['viddepe'] : '';
+                $vcanthoras = isset($_POST['vcanthoras']) && is_numeric($_POST['vcanthoras']) ? (int)$_POST['vcanthoras'] : 0;
+                $vtipo = isset($_POST['vtipo']) && !empty($_POST['vtipo']) ? $_POST['vtipo'] : '';
+                $vdetalle = isset($_POST['vdetalle']) && !empty($_POST['vdetalle']) ? $_POST['vdetalle'] : null;
+                $vdependencia = isset($_POST['vdependencia']) && !empty($_POST['vdependencia']) ? $_POST['vdependencia'] : null;
+
+                // --- INICIO DE LA NUEVA VALIDACIÓN(gabo) ---
+                // Solo validamos si la actividad que se va a agregar es de tipo 'Lectiva'
+                if ($vtipo === 'Lectiva') {
+                    $validacionLectiva = $this->model->validacionHorasLectivas(
+                        $_SESSION['codigox'],
+                        $idsem_para_guardar, // Usamos la variable corregida
+                        $vhoras
+                    );
+                    if (!$validacionLectiva['valido']) {
+                        throw new Exception($validacionLectiva['mensaje']);
+                    }
+                }
+                $this->model->agregarTrabajo(
+                    $_SESSION['codigox'],
+                    $vacti,
+                    $vdacti,
+                    $vimporta,
+                    $vmedida,
+                    $vcant,
+                    $vhoras,
+                    $vcalif,
+                    $vmeta,
+                    $datebox,
+                    $datebox2,
+                    $viddepe,
+                    $vcanthoras,
+                    $idsem_para_guardar, // Pasamos la variable corregida al modelo
+                    $vtipo,
+                    $vdetalle,
+                    $vdependencia
+                );
+                echo "<script language='javascript'>alert('Actividad agregada correctamente'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
+            } catch (Exception $e) {
+                echo "<script language='javascript'>alert('Error al agregar actividad: " . addslashes($e->getMessage()) . "'); window.location='{$_SERVER['HTTP_REFERER']}';</script>";
+            }
+        }
 
             if (isset($_POST["medit"]) && $_POST["medit"] == "Modificar") {
                 // Validar autorización

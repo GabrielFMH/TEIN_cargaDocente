@@ -3399,7 +3399,52 @@ if ($ValidarTiempoCompleto == "TC" || $ValidarTiempoCompleto == "TP" || $Validar
 
 /*HASTA AQUI CAPTURO LA FECHA EN QUE INICIA EL SEMESTRE SEMESTRE*/
 //by gabo
-$sql="exec trabixdoc_v2 ".$codigo.",".$sem;
+//$sql="exec trabixdoc_v2 ".$codigo.",".$sem;
+//by gabo
+
+// --- INICIO DE LA MODIFICACIÓN ---
+
+// Si la variable $sin_semestres es verdadera, aplicamos el filtro de fecha especial.
+if ($sin_semestres) {
+    // Esta consulta directa está diseñada para imitar la estructura de salida del procedimiento almacenado,
+    // pero filtrando por la fecha '1900-01-01' en lugar de por un semestre.
+    $sql = "
+        SELECT 
+            t.idtrab,                                   -- Columna 0
+            t.actividad,                                -- Columna 1
+            t.dactividad,                               -- Columna 2
+            t.importancia,                              -- Columna 3
+            t.medida,                                   -- Columna 4
+            t.cant,                                     -- Columna 5
+            t.horas,                                    -- Columna 6
+            t.calif,                                    -- Columna 7
+            t.meta,                                     -- Columna 8
+            CONVERT(varchar(10), t.fecha_inicio, 103) AS FECHA_INICIO, -- Columna 9 (Formato dd/mm/yyyy)
+            CASE 
+                WHEN t.fecha_fin IS NULL THEN CONVERT(varchar(10), GETDATE(), 103) 
+                ELSE CONVERT(varchar(10), t.fecha_fin, 103) 
+            END AS FECHA_FIN,                            -- Columna 10
+            ISNULL(t.porcentaje, 0) AS PORCENTAJE,      -- Columna 11
+            t.idsem AS SEMESTRE,                        -- Columna 12
+            t.codigo,                                   -- Columna 13
+            ISNULL(t.estado, 0) AS ESTADO,              -- Columna 14
+            -- Estas columnas adicionales son necesarias para que la estructura coincida
+            CASE WHEN t.porcentaje = 100 THEN 1 ELSE 0 END AS validarestado, -- Columna 15
+            CASE WHEN t.porcentaje = 100 AND thf.estado = 1 THEN 1 ELSE 0 END AS finalizacion, -- Columna 16
+            t.dependencia,                              -- Columna 17
+            t.detalle_actividad,                        -- Columna 18
+            t.tipo_actividad                            -- Columna 19
+        FROM trab t 
+        LEFT JOIN trab_historial_finalizado thf ON thf.idtrab = t.idtrab AND thf.IdSem = t.idsem
+        WHERE t.codigo = " . $codigo . "
+          AND CAST(t.fecha_inicio AS DATE) = '1900-01-01' 
+        ORDER BY t.idtrab ASC
+    ";
+} else {
+    // Si no, se utiliza la consulta original que filtra por semestre.
+    $sql = "exec trabixdoc_v2 " . $codigo . ", " . $sem;
+}
+// --- FIN DE LA MODIFICACIÓN ---
 //$sql = "SELECT * FROM dbo.trab WHERE codigo = '" . $codigo . "' AND idsem = " . $sem . " ORDER BY idtrab ASC";
 
 // Si codigo e idsem son números
