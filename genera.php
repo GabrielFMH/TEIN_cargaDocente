@@ -3968,19 +3968,8 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 	} else {
 		switch ($ValidarTiempoCompleto) {
 			case 'TP': // Lógica para Tiempo Parcial
-				if ($total_horas_calculadas >= 40) {
-					$mensaje = ' No debe alcanzar o superar las 40 horas';
-				} else {
-					$mensaje = ' Cumple con el límite de menos de 40 horas';
-				}
-				break;
-
 			case 'DE': // Lógica para Dedicación Exclusiva
-				if ($total_horas_calculadas < 40) {
-					$mensaje = ' Debe de completar como minimo 40 horas';
-				} else {
-					$mensaje = ' Cumple con el minimo de 40 horas';
-				}
+				$mensaje = '';
 				break;
 
 			case 'TC': // Lógica para Tiempo Completo
@@ -4010,26 +3999,31 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 	// MODIFICACIÓN 5: Se ha eliminado el bloque de código redundante que recalculaba la variable $mensaje.
 	// El bloque de "NUEVAS VALIDACIONES" anterior ya genera el mensaje correcto para todos los casos (TC, TP, DE).
 
-	if ($vah>0)
-	{
-
-		echo '<table style="font-size:20px; color:red;">
-			<tr>
-			<td width="150" colspan="2" align="right">
-			<b>Total Hrs.&nbsp;</b></td>
-			<td width="600" colspan="3"><b>'.($hl+($hn-$hora_descuento)).' -'.$mensaje.'</b></td>
-			</tr>
-		</table>';
-	}
-	else
-	{
-		echo '<table style="font-size:20px; color:red;">
-			<tr>
-			<td width="150" colspan="2" align="right">
-			<b>Total Hrs.&nbsp;</b></td>
-			<td width="600" colspan="3"><b>'.($hl+$hn).' -'.$mensaje.'</b></td>
-			</tr>
-		</table>';
+	// --- Mostrar resultado según tipo de contrato ---GABO
+	// Solo mostrar tabla de Total Hrs. si es TC
+	if (!$es_exento && $ValidarTiempoCompleto == 'TC') {
+		if ($vah > 0) {
+			echo '<table style="font-size:20px; color:red;">
+				<tr>
+				<td width="150" colspan="2" align="right">
+				<b>Total Hrs.&nbsp;</b></td>
+				<td width="600" colspan="3"><b>' . ($hl + ($hn - $hora_descuento)) . ' -' . $mensaje . '</b></td>
+				</tr>
+			</table>';
+		} else {
+			echo '<table style="font-size:20px; color:red;">
+				<tr>
+				<td width="150" colspan="2" align="right">
+				<b>Total Hrs.&nbsp;</b></td>
+				<td width="600" colspan="3"><b>' . ($hl + $hn) . ' -' . $mensaje . '</b></td>
+				</tr>
+			</table>';
+		}
+	} else {
+		// Para TP, DE o Exento, solo muestra el mensaje si aplica
+		if (trim($mensaje) != '') {
+			echo '<div style="font-size:20px; color:red;"><b>' . $mensaje . '</b></div>';
+		}
 	}
 
 
