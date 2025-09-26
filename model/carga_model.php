@@ -1,8 +1,5 @@
 <?php
 
-// Include error logger for comprehensive error logging
-require_once __DIR__ . '/../error_logger.php';
-
 class CargaModel
 {
     private $conn;

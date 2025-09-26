@@ -1,6 +1,5 @@
 <?php
-require_once 'error_logger.php';
-include('genera_formularios_carga.php');
+
 function huella($codper)
 {
 	$conn=conex();

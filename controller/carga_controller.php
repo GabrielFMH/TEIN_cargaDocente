@@ -4,8 +4,6 @@ ob_clean();
 error_reporting(0);
 ini_set('display_errors', 0);
 
-// Include error logger for comprehensive error logging
-require_once __DIR__ . '/../error_logger.php';
 
 require_once BASE_PATH . '/model/carga_model.php';
 
