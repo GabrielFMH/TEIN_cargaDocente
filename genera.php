@@ -3747,31 +3747,52 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 		echo '</tr>';
 
 		// Fila 2: Fechas y Porcentaje de avance
-		echo '<tr>';
-			echo '<td><font size="1">';
-				date_default_timezone_set('America/Lima');
-				$datebox="dateboxx".$da;
-				$datebox2="dateboxx2".$da;
+		// Si NO estamos en modo sin_semestres, mostramos la fila completa con las fechas --Gabriel 26-09-25
+		if (!$sin_semestres) {
+			// Fila 2: Fechas y Porcentaje de avance
+			echo '<tr>';
+				echo '<td><font size="1">';
+					date_default_timezone_set('America/Lima');
+					$datebox="dateboxx".$da;
+					$datebox2="dateboxx2".$da;
 
-				// Fecha Inicio
-				echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
-			?>
-				<input name="<? echo $datebox ?>" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(<? echo $datebox ?>,'dd/mm/yyyy',this)" type="text" value=<? echo $row[9] ?> >
-			<?
-				echo '&nbsp;&nbsp;&nbsp;';
-				
-				// Fecha Final
-				echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Final:</font>';
-			?>
-				<input name=<? echo $datebox2 ?> readonly="true" autocomplete="off" size="10" onClick="displayCalendar(<? echo $datebox2 ?>,'dd/mm/yyyy',this)" type="text" value=<? echo $row[10] ?> >
-			<?
-				echo '&nbsp;&nbsp;&nbsp;';
-				
-				// Porcentaje de avance
-				echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance:</font>';
-				echo' <INPUT TYPE="text" class="ftexto" NAME="vporcentaje_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" maxlength="2" value="'.$row[11].'">';
-			echo '</font></td>';
-		echo '</tr>';
+					// Fecha Inicio
+					echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Inicio:</font>';
+				?>
+					<input name="<? echo $datebox ?>" readonly="true" autocomplete="off" size="10" onClick="displayCalendar(<? echo $datebox ?>,'dd/mm/yyyy',this)" type="text" value=<? echo $row[9] ?> >
+				<?
+					echo '&nbsp;&nbsp;&nbsp;';
+					
+					// Fecha Final
+					echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Fecha Final:</font>';
+				?>
+					<input name=<? echo $datebox2 ?> readonly="true" autocomplete="off" size="10" onClick="displayCalendar(<? echo $datebox2 ?>,'dd/mm/yyyy',this)" type="text" value=<? echo $row[10] ?> >
+				<?
+					echo '&nbsp;&nbsp;&nbsp;';
+					
+					// Porcentaje de avance
+					echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance:</font>';
+					echo' <INPUT TYPE="text" class="ftexto" NAME="vporcentaje_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" maxlength="2" value="'.$row[11].'">';
+				echo '</font></td>';
+			echo '</tr>';
+		} else {
+			// Si estamos en modo sin_semestres, solo mostramos el porcentaje de avance
+			// y pasamos las fechas como campos ocultos para no perder el valor al editar.
+			echo '<tr>';
+				echo '<td><font size="1">';
+					// Porcentaje de avance
+					echo'<font style="background-color: #F2F8FC" face="Verdana" size="1">Porcentaje de avance:</font>';
+					echo' <INPUT TYPE="text" class="ftexto" NAME="vporcentaje_editar'.$da.'" title="Escribir las cantidades que se tomarán en cuenta con respecto a la unidad de medida que hayan utilizado" size="2" maxlength="2" value="'.$row[11].'">';
+					
+					// Campos de fecha ocultos para que el valor no se pierda al editar
+					$datebox="dateboxx".$da;
+					$datebox2="dateboxx2".$da;
+					echo '<input type="hidden" name="'.$datebox.'" value="'.$row[9].'">';
+					echo '<input type="hidden" name="'.$datebox2.'" value="'.$row[10].'">';
+				echo '</font></td>';
+			echo '</tr>';
+		}
+
 
 		echo'<tr>';
 			echo '<td bgcolor="'.$tcol.'"><font size="1">Detalle Actividad</font></td>';
