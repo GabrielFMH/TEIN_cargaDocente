@@ -1,6 +1,0 @@
-[2025-09-12 09:11:52] AGREGAR TRABAJO - Parámetros preparados para trabiagregar_v2: {"codigox":"298907","vacti":"Academica","vdacti":"1","vimporta":"1","vmedida":"Alumnos","vcant":1,"vhoras":1,"vcalif":0,"vmeta":"1","vdatebox":"04\/08\/2025","vdatebox2":"10\/12\/2025","viddepe":"314000000","vcanthoras":36,"idsem":"20250228","vtipo_actividad":"Lectiva","vdetalle_actividad":"Preparacion_Clase","vdependencia":"AGPH : Área de Gestión del Potencial Humano"}
---------------------------------------------------------------------------------
-[2025-09-12 09:11:52] AGREGAR TRABAJO - SQL completo: exec trabiagregar_v2 298907, 'Academica', '1', '1', 'Alumnos', 1, 1, 0, '1', '04/08/2025', '10/12/2025', '314000000', '36', 20250228, 'Lectiva', 'Preparacion_Clase', 'AGPH : Área de Gestión del Potencial Humano'
---------------------------------------------------------------------------------
-[2025-09-12 09:11:52] AGREGAR TRABAJO - Registro insertado exitosamente con ID: 15853
---------------------------------------------------------------------------------

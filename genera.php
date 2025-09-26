@@ -2626,7 +2626,9 @@ function matricula($codigo, $sex)
 
 
 /*AGREGUE LA VARIALBE $file_php PARA DETERMINAR SI ESTOY EN EL ARCHIVO estadistica.php O buscab.php*/
-function individual($codigo, $sex, $codper, $busca, $file_php,$sem, $semestre_denominacion, $sin_semestres = false)//GABO AGREGO SEMESTRE DENOMINACION Y SIN_SEMESTRES
+
+//Nuevas entradas semestre_denominacion y sin_semestres --Gabriel 26-09-25
+function individual($codigo, $sex, $codper, $busca, $file_php,$sem, $semestre_denominacion, $sin_semestres = false)
 {
  	// Variable para mantener el estado en la URL de los formularios
  	$url_param_semestre = $sin_semestres ? '&sin_semestres=1' : '';
@@ -2656,13 +2658,13 @@ function individual($codigo, $sex, $codper, $busca, $file_php,$sem, $semestre_de
 	// $ValidarTiempoCompleto =$row[6];   //naty
 	// echo $ValidarTiempoCompleto;
 
-	//Gabo
+	//Captura del nombre de la escuela para el formulario de agregacion de actividades no lectivas --Gabriel 26-09-25
 	$nombreEscuelaPorDefecto = '';
 
 	$ko=1;
 	while ($row=fetchrow_fichamatricula($result,-1))
 	{
-		//Gabo
+		
 		if (empty($nombreEscuelaPorDefecto)) { // <--- 2. GUARDA EL VALOR SOLO UNA VEZ
 			$nombreEscuelaPorDefecto = $row[1];
 		}
@@ -2981,7 +2983,7 @@ echo '<tr><td colspan="3" align="Center"><b><font size="2">Total de Hrs Lectivas
 echo '</table><br>';
 cierra($resulta);
 
-// --- INICIO: Calcular Total Horas Lectivas Cuadro ---GABO
+// --- INICIO: Calcular Total Horas Lectivas Cuadro --Gabriel 26-09-25
 $total_horas_lectivas_cuadro = 0;
 $CursoSeleccionado = null;
 
@@ -3000,12 +3002,12 @@ cierra($result_hl_cuadro);
 
 // Aplicar la fórmula: total / 4 y redondear
 $total_horas_lectivas_cuadro = round($total_horas_lectivas_cuadro / 4);
-// --- FIN: Calcular Total Horas Lectivas Cuadro ---
+// --- FIN: Calcular Total Horas Lectivas Cuadro --Gabriel 26-09-25
 
 /*FORMULARIO DE CARGA NO LECTIVA , LISTA TODAS LAS ACTIVIDADES INGRESADAS EN EL FORMULARIO*/
 
 // MODIFICACIÓN 1: Se cambia la condición para que incluya a los docentes TP y DE.
-// Esto permite que el código de cálculo de horas y el resumen final se ejecuten para ellos.  GABO
+// Diferenciacion entre docentes TC, TP y DE para las condiciones de Hrs minimas. --Gabriel 26-09-25
 if ($ValidarTiempoCompleto == "TC" || $ValidarTiempoCompleto == "TP" || $ValidarTiempoCompleto == "DE") {
 
 	// MODIFICACIÓN 2: Se envuelve la apertura del FORMULARIO en una condición.
@@ -3013,7 +3015,7 @@ if ($ValidarTiempoCompleto == "TC" || $ValidarTiempoCompleto == "TP" || $Validar
 	
 
 	if ($ValidarTiempoCompleto == "TC") {
-		if ($busca==0) //GABO
+		if ($busca==0) 
 		{
 			// Añadimos la variable $url_param_semestre al final de la URL
 			echo '<FORM METHOD="POST" ACTION="carga.php?tr=1&sesion='.$sex.'&x='.$sem.$url_param_semestre.'" name="frmindiv">';
@@ -3202,7 +3204,7 @@ if ($ValidarTiempoCompleto == "TC" || $ValidarTiempoCompleto == "TP" || $Validar
 		if ( ($vUno == 0 && $vDos == 0 && $vTres == true) || ($vUno == 0 && $vDos == 0 && $vTres == false) || ($vUno == 1 && $vDos == 1 && $vTres == false) || ($vUno == 1 && $vDos == 0 && $vTres == false) )
 		{
 
-						// --- INICIO: Filtro por Mes --- GABO
+						// --- INICIO: Filtro por Mes de listado de actividades no lectivas --Gabriel 26-09-25
 			if (!$sin_semestres) {
 
 
@@ -3355,7 +3357,7 @@ if ($ValidarTiempoCompleto == "TC" || $ValidarTiempoCompleto == "TP" || $Validar
 				}
 			} // Fin de la condición para ocultar el acordeón
 
-			// --- INICIO: JavaScript para Filtro por Mes ---GABO
+			// --- INICIO: JavaScript para Filtro por Mes --Gabriel 26-09-25
 				?>
 				<script>
 				document.getElementById('filtro_mes_individual').addEventListener('change', function() {
@@ -3433,11 +3435,11 @@ if ($ValidarTiempoCompleto == "TC" || $ValidarTiempoCompleto == "TP" || $Validar
 	} // Fin del bloque if ($ValidarTiempoCompleto == "TC")
 
 /*HASTA AQUI CAPTURO LA FECHA EN QUE INICIA EL SEMESTRE SEMESTRE*/
-//by gabo
-//$sql="exec trabixdoc_v2 ".$codigo.",".$sem;
-//by gabo
 
-// --- INICIO DE LA MODIFICACIÓN ---
+//$sql="exec trabixdoc_v2 ".$codigo.",".$sem;
+
+
+// --- Logica de carga del PIT sin cronograma --Gabriel 26-09-25
 
 // Si la variable $sin_semestres es verdadera, aplicamos el filtro de fecha especial.
 if ($sin_semestres) {
@@ -3656,7 +3658,7 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 <?php
 /*EN LA CARGA DEL DOCENTE*/
 
-	// Array con las opciones para el nuevo combobox GABO
+	// Array con las opciones para el nuevo combobox de dependencias de la carga no lectiva --Gabriel 26-09-25
 	// Realizar la consulta para obtener las dependencias desde la base de datos
 		$sql_dependencias = "SELECT DISTINCT descrip FROM depe AS d WHERE d.estado = 0 ORDER BY descrip";
 		$result_dependencias = luis($conn, $sql_dependencias); // Asumiendo que $conn está disponible y es válido
@@ -4019,8 +4021,8 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 	/*FIN*/
 
 
-	//GABO
-		// --- INICIO: BLOQUE DE CÓDIGO MODIFICADO ---
+	
+		// --- Logica para excentar a los rectores y vicerectores de la carga administrativa --Gabriel 26-09-25
 	$conn = conex();
 
 	// 1. Obtener las horas laborales del docente
@@ -4092,7 +4094,7 @@ function actualizarDetalleActividad<?php echo $da; ?>() {
 	// MODIFICACIÓN 5: Se ha eliminado el bloque de código redundante que recalculaba la variable $mensaje.
 	// El bloque de "NUEVAS VALIDACIONES" anterior ya genera el mensaje correcto para todos los casos (TC, TP, DE).
 
-	// --- Mostrar resultado según tipo de contrato ---GABO
+	// --- Mostrar resultado según tipo de contrato del docente --Gabriel 26-09-25
 	// Solo mostrar tabla de Total Hrs. si es TC
 	if (!$es_exento && $ValidarTiempoCompleto == 'TC') {
 		if ($vah > 0) {
@@ -4198,7 +4200,7 @@ cierra($result_detalle_trab);
 		}
 
 
-		//Gabo
+		//Funcion para editar detalle actividad--Gabriel 26-09-25
 		function actualizarDetalleActividad() {
 			var tipo = document.getElementById("tipo_actividad").value;
 			var detalleSelect = document.getElementById("detalle_actividad");
@@ -4278,10 +4280,10 @@ cierra($result_detalle_trab);
 		</script>
 
 		<?php
-				// --- INICIO CAMBIO: Reemplazar array manual con consulta SQL GABO ---
+
 				// $dependencias = [ "AC : Área de Contabilidad", "AGPH : Área de Gestión del Potencial Humano", ... ]; // <-- Línea original a eliminar
 
-				// Realizar la consulta para obtener las dependencias desde la base de datos
+				// Realizar la consulta para obtener las dependencias desde la base de datos --Gabriel 26-09-25
 				$sql_dependencias = "SELECT DISTINCT descrip FROM depe AS d WHERE d.estado = 0 ORDER BY descrip";
 				$result_dependencias = luis($conn, $sql_dependencias); // Asumiendo que $conn está disponible y es válido
 				$dependencias = array(); // Inicializar array vacío
@@ -4646,7 +4648,7 @@ cierra($resulta);
 
 
 /*ESTE PROCEDIMIENTO SE ENCARGA DE GENERAR  EL Detalle de Carga No Lectiva DEL ARCHIVO estadistica.php, AL REALIZAR CLIC SOBRE EL GIF METAS*/
-//by gabo
+
 $sql="exec trabixdoc_v2 ".$codigo.",".$sem;
 //$sql = "SELECT * FROM dbo.trab WHERE codigo = $codigo AND idsem = $sem ORDER BY idtrab ASC";
 
@@ -5724,7 +5726,7 @@ function view_trab_informe_vice($idtrab,$sex)
 
 /*Gary - Añadi esta funcion para mostrar los horarios por el semestre seleccionado en el PIT para el modulo de estadistica varia en el procedimiento*/
 /*AGREGUE LA VARIALBE $file_php PARA DETERMINAR SI ESTOY EN EL ARCHIVO estadistica.php O buscab.php*/
-function individualPIT($codigo, $sex, $codper, $busca, $file_php,$sem) //GABO AÑADIO SEMESTRE_DENOMINACION
+function individualPIT($codigo, $sex, $codper, $busca, $file_php,$sem) 
 /*function individual($codigo, $sex, $codper, $busca);*/
 {
 $conn=conex();
@@ -6906,7 +6908,6 @@ if ($hn!=0) {echo '<table border="1" cellspacing="0" ><tr><td width="150" colspa
 /*DETERMINO SI EL TOTAL DE HORAS SOBREPASA LAS 40 HORAS Y MUESTRA MENSAJE*/
 
 		// Obtener el total de horas laborales y la dedicación	
-		//GABO
 		// --- INICIO: NUEVAS VALIDACIONES ---
 		$conn = conex();
 

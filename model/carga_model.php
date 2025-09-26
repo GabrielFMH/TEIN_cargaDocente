@@ -52,8 +52,8 @@ class CargaModel
         }
     }
 
-    // GABO - Validando porcentaje total
-    // Método para validar que la suma de porcentajes no exceda 100%
+
+    // Método para validar que la suma de porcentajes no exceda 100% --Gabriel 26-09-25
     public function validarPorcentajeTotal($codigo, $idsem, $nuevoPorcentaje, $idtrabExcluir = null)
     {
         $sql = "SELECT ISNULL(SUM(CAST(porcentaje AS FLOAT)), 0) as total FROM trab WHERE codigo = {$codigo} AND idsem = {$idsem}";
@@ -69,7 +69,7 @@ class CargaModel
         return ($totalActual + $nuevoPorcentaje) <= 100;
     }
 
-    // GABO - Validando horas lectivas
+    // Método Validando horas lectivas --Gabriel 26-09-25
     public function validacionHorasLectivas($codigo, $idsem, $horasNuevas, $idtrabExcluir = null)
     {
         // Obtener el límite dinámico de horas lectivas del cuadro de detalle
@@ -123,8 +123,7 @@ class CargaModel
         return (int)$numero;
     }
 
-    // GABO - Validando carga horaria
-    // Método para validar carga horaria según reglas (20h TC, 40h totales, etc.)
+    // Método para validar carga horaria según reglas (20h TC, 40h totales, etc.) --Gabriel 26-09-25
     public function validarCargaHoraria($codigo, $idsem, $horasNuevas)
     {
         $sql = "SELECT 
@@ -564,7 +563,7 @@ class CargaModel
         $this->execute_query($sql);
     }
 
-    // GABO - Validando porcentaje en historial
+
     public function registrarHistorial($codigox, $idtrab, $vnominfo_historial, $vdirigido_historial, $vcargo_historial, $vremitente_historial, $vdetalle_historial, $vporcentaje_historial, $dia)
     {
         // Validar que el porcentaje sea numérico
@@ -585,7 +584,7 @@ class CargaModel
         $sql_historial = "delete from trab_historial where idtrab={$idtrab}";
         $this->execute_query($sql_historial);
 
-        // Solo ejecutar esta consulta si se proporcionó un semestre válido
+        // Solo ejecutar esta consulta si se proporcionó un semestre válido(necesaria para distinguir entre el pit sin cronograma y el normal) --Gabriel 26-09-25
         if ($msemestre !== null && is_numeric($msemestre)) {
             $sql_detalle = "delete from detalle_trab where codigo={$codigox} and idsem={$msemestre}";
             $this->execute_query($sql_detalle);

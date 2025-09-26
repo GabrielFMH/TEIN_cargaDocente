@@ -457,7 +457,7 @@ class CargaController
             // --- FIN DE LA MODIFICACIÓN ---
             
             try {
-                // GABO - Validando campos numéricos (horas, cantidad, porcentaje)
+                // Validando campos numéricos (horas, cantidad, porcentaje) --Gabriel 26-09-25
                 // Preparar parámetros con validación
                 $vacti = isset($_POST['vacti']) && !empty($_POST['vacti']) ? $_POST['vacti'] : '';
                 $vdacti = isset($_POST['vdacti']) && !empty($_POST['vdacti']) ? $_POST['vdacti'] : '';
@@ -465,7 +465,6 @@ class CargaController
                 $vmedida = isset($_POST['vmedida']) && !empty($_POST['vmedida']) ? $_POST['vmedida'] : '';
                 $vcant = isset($_POST['vcant']) && is_numeric($_POST['vcant']) ? (int)$_POST['vcant'] : 0;
                 $vhoras = isset($_POST['vhoras']) && is_numeric($_POST['vhoras']) ? (float)$_POST['vhoras'] : 0;
-                // La siguiente línea tenía un error lógico, debería ser 'vporcentaje', no 'vcalif'. Lo corregimos.
                 $vcalif = isset($_POST['vporcentaje']) && is_numeric($_POST['vporcentaje']) ? (float)$_POST['vporcentaje'] : 0;
                 $vmeta = isset($_POST['vmeta']) && !empty($_POST['vmeta']) ? $_POST['vmeta'] : '';
                 $datebox = isset($_POST['datebox']) && !empty($_POST['datebox']) ? $_POST['datebox'] : '';
@@ -476,8 +475,8 @@ class CargaController
                 $vdetalle = isset($_POST['vdetalle']) && !empty($_POST['vdetalle']) ? $_POST['vdetalle'] : null;
                 $vdependencia = isset($_POST['vdependencia']) && !empty($_POST['vdependencia']) ? $_POST['vdependencia'] : null;
 
-                // --- INICIO DE LA NUEVA VALIDACIÓN(gabo) ---
-                // Solo validamos si la actividad que se va a agregar es de tipo 'Lectiva'
+
+                // Solo validamos si la actividad que se va a agregar es de tipo 'Lectiva' --Gabriel 26-09-25
                 if ($vtipo === 'Lectiva') {
                     $validacionLectiva = $this->model->validacionHorasLectivas(
                         $_SESSION['codigox'],
@@ -622,7 +621,7 @@ class CargaController
                         $_SESSION['codigox'] = $_POST["coduni"];
 
                         try {
-                            // GABO - Validando campos numéricos para edición (horas, cantidad, porcentaje)
+                            // Validando campos numéricos para edición (horas, cantidad, porcentaje) --Gabriel 26-09-25
                             // Preparar parámetros con validación para edición
                             $vacti_editar = isset($_POST['vacti_editar'.$i]) && !empty($_POST['vacti_editar'.$i]) ? $_POST['vacti_editar'.$i] : '';
                             $vdacti_editar = isset($_POST['vdacti_editar'.$i]) && !empty($_POST['vdacti_editar'.$i]) ? $_POST['vdacti_editar'.$i] : '';
@@ -639,7 +638,7 @@ class CargaController
                             $vdetalle_editar = isset($_POST['vdetalle_editar'.$i]) && !empty($_POST['vdetalle_editar'.$i]) ? $_POST['vdetalle_editar'.$i] : null;
                             $vdependencia_editar = isset($_POST['vdependencia_editar'.$i]) && !empty($_POST['vdependencia_editar'.$i]) ? $_POST['vdependencia_editar'.$i] : null;
 
-                            // GABO - Editando actividad con campos dependencia y detalle_actividad
+                            //Editando actividad con campos dependencia y detalle_actividad --Gabriel 26-09-25
 
                             $this->model->editarTrabajo(
                                 $_SESSION['codigox'],
@@ -1125,7 +1124,7 @@ class CargaController
                     require ("genera.php");
                     $sem = $data['idsem'];
         
-                    // --- NUEVO: Obtener la denominación del semestre seleccionado ---GABO
+                    // Obtener la denominación del semestre seleccionado --Gabriel 26-09-25
                     $semestre_denominacion = "DESCONOCIDO"; // Valor por defecto
                     if (isset($data['semestres'])) {
                         // Reiniciar puntero del resultset si es necesario (aunque fetchrow normalmente avanza)
